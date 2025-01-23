@@ -76,24 +76,24 @@ python>=3.8.16, torch>=2.3, lightning>=2.2.4, wandb>=0.17.0
 
 ## Data Preparation
 
-check `configs/data_split`
+check [configs/data_split](configs/data_split)
 
 ## Train
 
 For example, train PromptMR+ on fastmri-knee dataset
 
 ```python
-python main.py fit --config configs/base.yaml --config configs/model/pmr-plus.yaml --config configs/train/pmr-plus/cmr24-cardiac.yaml 
+python main.py fit --config configs/base.yaml --config configs/model/pmr-plus.yaml --config configs/train/pmr-plus/fm-knee.yaml 
 ```
 
-Training on fastmri-knee requires at least 17G GPU memory if set `use_checkpoint` and `compute_sens_per_coil`.
+Training on fastmri-knee requires at least 17G GPU memory if set `use_checkpoint` and `compute_sens_per_coil` in config file.
 
 ## Test
 
 For exmaple, run inference of PromptMR+ on fastmri-knee dataset
 
 ```python
-python main.py predict --config configs/inference/pmr-plus/fastmri-knee.yaml
+python main.py predict --config configs/inference/pmr-plus/fm-knee.yaml
 ```
 
 ## Citation
