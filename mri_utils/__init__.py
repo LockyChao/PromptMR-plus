@@ -1,4 +1,4 @@
-from .coil_combine import rss, rss_complex
+from .coil_combine import rss, rss_complex, sens_expand, sens_reduce
 from .fftc import fft2c_new as fft2c
 from .fftc import fftshift, ifftshift, roll
 from .fftc import ifft2c_new as ifft2c

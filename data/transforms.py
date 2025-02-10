@@ -72,7 +72,6 @@ def apply_mask(
     if mask.shape[0]!=1: # repeat for coil [cmr24 data]
         mask = mask.repeat_interleave(data.shape[0]//mask.shape[0], dim=0)
     
-    # print('debug: ', data.shape, mask.shape)
     masked_data = data * mask + 0.0  # the + 0.0 removes the sign of the zeros
 
     return masked_data, mask, num_low_frequencies, mask_type
@@ -262,6 +261,9 @@ class PromptMRSample(NamedTuple):
         slice_num: The slice index.
         max_value: Maximum image value.
         crop_size: The size to crop the final image.
+        mask_type: The type of mask used.
+        num_t: number of temporal frames in the original volume. Only used for CmrxRecon data.
+        num_slc: number of slices in the original volume. Only used for CmrxRecon data.
     """
 
     masked_kspace: torch.Tensor

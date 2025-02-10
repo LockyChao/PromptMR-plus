@@ -10,22 +10,31 @@ This repository contains the official implementation of the paper *Rethinking De
 - **Oct 10, 2024:** PromptMR+ secured 1st place in both tasks of the MICCAI CMRxRecon2024 challenge.
 - **Aug 12, 2024:** Paper accepted as an Oral presentation at ECCV 2024.
 
-<div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
-  <div style="text-align: center;">
-    <img src="assets/gpu_mem_train_cc_brain.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
-    <p><em>Training GPU Memory on cc-brain dataset.</em></p>
-  </div>
-  <div style="text-align: center;">
-    <img src="assets/gpu_mem_test_cmr23.png" alt="Test GPU Memory on CMRxRecon2023 dataset" width="400" />
-    <p><em>Test GPU Memory on CMRxRecon2023 dataset.</em></p>
-  </div>
-</div>
+<p align="center">
+  <img src="assets/proposed.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
+  <br><em>Proposed techniques.</em>
+</p>
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/gpu_mem_train_cc_brain.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
+      <br><em>Training GPU Memory on cc-brain dataset.</em>
+    </td>
+    <td align="center">
+      <img src="assets/gpu_mem_test_cmr23.png" alt="Test GPU Memory on CMRxRecon2023 dataset" width="400" />
+      <br><em>Test GPU Memory on CMRxRecon2023 dataset.</em>
+    </td>
+  </tr>
+</table>
+
 
 ## Model Weights
 
 We provide the **model weights** and **reconstruction results** for PromptMR/PromptMR+ trained on the FastMRI-knee, FastMRI-brain, Calgary-Campinas-brain, CMRxRecon2023-cardiac and CMRxRecon2024-cardiac datasets, which can be downloaded from the [HuggingFace](https://huggingface.co/hellopipu/PromptMR/tree/main).
 
-#### CC-brain
+<details>
+  <summary>CC-brain Results</summary>
 
 | Model         | Cas. | Trained on | Training Acc | PSNR/SSIM 5x | PSNR/SSIM 10x |
 | ------------- | ---- | ---------- | ------------ | ------------ | ------------- |
@@ -34,7 +43,10 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 > Note: test result is on a subset of official val set (10/20), results are better than those reported in the paper.
 
-#### CMRxRecon2023-cardiac
+</details>
+
+<details>
+  <summary>CMRxRecon2023-cardiac Results</summary>
 
 | Model         | Cas. | Trained on | Training Acc   | Cine LAX<br />PSNR/SSIM 10x | Cine SAX<br />PSNR/SSIM 10x | Mapping T1w<br />PSNR/SSIM 10x | Mapping T2w<br />PSNR/SSIM 10x |
 | ------------- | ---- | ---------- | -------------- | --------------------------- | --------------------------- | ------------------------------ | ------------------------------ |
@@ -43,7 +55,10 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 > Note: test result is on the official validation set.
 
-#### FastMRI-knee
+</details>
+
+<details>
+  <summary>FastMRI-knee Results</summary>
 
 | Model         | Cas. | Trained on | Training Acc | NMSE/PSNR/SSIM 4x   | NMSE/PSNR/SSIM 8x   |
 | ------------- | ---- | ---------- | ------------ | ------------------- | ------------------- |
@@ -52,7 +67,10 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 > Note: test result is on a subset of official val set (100/199).
 
-#### CMRxRecon2024-cardiac
+</details>
+
+<details>
+  <summary>CMRxRecon2024-cardiac Results</summary>
 
 | Model         | Cas. | Trained on | Training Acc   | Task1 Avg<br />PSNR/SSIM | Task2 Avg<br />PSNR/SSIM |
 | ------------- | ---- | ---------- | -------------- | ---------------------------- | ---------------------------- |
@@ -61,7 +79,10 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 > Note: test result is on the split subset from the official training set (17%). (reported in the STACOM24 paper)
 
-#### FastMRI-Brain
+</details>
+
+<details>
+  <summary>FastMRI-Brain Results</summary>
 
 | Model         | Cas. | Trained on | Training Acc | NMSE/PSNR/SSIM 4x   | NMSE/PSNR/SSIM 8x   |
 | ------------- | ---- | ---------- | ------------ | ------------------- | ------------------- |
@@ -69,6 +90,8 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 | `PromptMR+` | 12   | train      | 4x and 8x    | 0.0031/41.84/0.9615 | 0.0055/39.46/0.9494 |
 
 > Note: test result is on the official test set. (Not reported in the paper)
+
+</details>
 
 ## Install
 

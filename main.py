@@ -7,11 +7,6 @@ from itertools import chain
 from pathlib import Path
 from argparse import ArgumentParser
 from collections import defaultdict
-from typing import (
-    List,
-    Optional,
-    Union,
-)
 import yaml
 import torch
 import numpy as np
@@ -25,8 +20,6 @@ from pl_modules import PromptMrModule
 
 def preprocess_save_dir():
     """Ensure `save_dir` exists, handling both command-line arguments and YAML configuration."""
-
-    # Step 1: Parse command-line arguments for --config and --trainer.logger.save_dir
     parser = ArgumentParser()
     parser.add_argument("--config", type=str, nargs="*",
                         help="Path(s) to YAML config file(s)")
@@ -36,7 +29,6 @@ def preprocess_save_dir():
 
     save_dir = None  # Default to None
 
-    # Step 2: Check for `save_dir` in YAML configuration
     if args.config:
         for config_path in args.config:
             if os.path.exists(config_path):
@@ -56,19 +48,15 @@ def preprocess_save_dir():
                     except yaml.YAMLError as e:
                         print(f"Error parsing YAML file {config_path}: {e}")
 
-    # Step 3: Command-line arguments override YAML configuration
     for i, arg in enumerate(sys.argv):
         if arg == "--trainer.logger.save_dir":
-            # Get the value of --trainer.logger.save_dir
             save_dir = sys.argv[i + 1] if i + 1 < len(sys.argv) else None
             break
 
-    # Step 4: Do nothing if save_dir is None or logger is not configured
     if not save_dir:
         print("Logger save_dir is None. No action taken.")
         return
 
-    # Step 5: Create the `save_dir` if it exists and is valid
     if not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
         print(f"Pre-created logger save_dir: {save_dir}")
@@ -79,11 +67,9 @@ class CustomSaveConfigCallback(SaveConfigCallback):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Collect and merge tags during initialization
         self.merged_tags = self._collect_tags_from_configs()
 
     def _collect_tags_from_configs(self):
-        # Collect all tags from command-line configs
         config_files = []
         merged_tags = set()
 
@@ -91,9 +77,6 @@ class CustomSaveConfigCallback(SaveConfigCallback):
             if arg == '--config' and i + 1 < len(sys.argv):
                 config_files.append(sys.argv[i + 1])
 
-        # print("Debug - Config files provided via command-line:", config_files)
-
-        # Collect all unique tags from configs
         for config_file in config_files:
             if os.path.exists(config_file):
                 try:
@@ -104,22 +87,17 @@ class CustomSaveConfigCallback(SaveConfigCallback):
                                 'logger', {})
                             if logger and isinstance(logger, dict):
                                 tags = logger.get('init_args', {}).get('tags', [])
-                                # print(f"Debug - Found tags in {config_file}: {tags}")
                                 if isinstance(tags, list):
                                     merged_tags.update(tags)
                 except (yaml.YAMLError, IOError) as e:
                     print(f"Warning: Error reading {config_file}: {str(e)}")
-
-        # print("Debug - Merged tags:", merged_tags)
         return merged_tags
 
     def setup(self, trainer, pl_module, stage):
-        # Update the tags in the logger configuration
         if hasattr(self.config, 'trainer') and hasattr(self.config.trainer, 'logger'):
             logger_config = self.config.trainer.logger
             if hasattr(logger_config, 'init_args'):
                 logger_config.init_args['tags'] = list(self.merged_tags)
-                # Force update the logger's tags if it's already initialized
                 if hasattr(trainer, 'logger') and trainer.logger is not None:
                     trainer.logger.experiment.tags = list(self.merged_tags)
 
@@ -127,31 +105,20 @@ class CustomSaveConfigCallback(SaveConfigCallback):
 
     def save_config(self, trainer, pl_module, stage) -> None:
         """Save the configuration file under the logger's run directory."""
-        # Skip saving if in predict mode
         if stage == "predict":
             print("Skipping saving configuration in predict mode.")
             return  
-        # Ensure the logger is available and has an experiment
         if trainer.logger is not None and hasattr(trainer.logger, "experiment"):
-            # Retrieve logger attributes
             project_name = trainer.logger.experiment.project_name()
             run_id = trainer.logger.experiment.id
             save_dir = trainer.logger.save_dir
             run_dir = os.path.join(save_dir, project_name, run_id)
-
-            # Ensure the directory exists
+            
             os.makedirs(run_dir, exist_ok=True)
-
-            # Save the configuration
             config_path = os.path.join(run_dir, "config.yaml")
             self.parser.save(
                 self.config, config_path, skip_none=False, overwrite=self.overwrite, multifile=self.multifile
             )
-
-            # Log the configuration
-            # trainer.logger.log_hyperparams({"config": self.config})
-
-            # Optional: Print confirmation
             print(f"Configuration saved to {config_path}")
 
 
@@ -223,8 +190,6 @@ def run_cli():
         save_config_callback=CustomSaveConfigCallback,
         save_config_kwargs={"overwrite": True},
     )
-        
-        
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     run_cli()

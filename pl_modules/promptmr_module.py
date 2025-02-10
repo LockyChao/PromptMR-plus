@@ -73,15 +73,20 @@ class PromptMrModule(MriModule):
             n_enc_cab: number of CABs (channel attention Blocks) in DownBlock.
             n_dec_cab: number of CABs (channel attention Blocks) in UpBlock.
             n_skip_cab: number of CABs (channel attention Blocks) in SkipBlock.
-            n_bottleneck_cab: number of CABs (channel attention Blocks) in
-                BottleneckBlock.
+            n_bottleneck_cab: number of CABs (channel attention Blocks) in BottleneckBlock.
             no_use_ca: not using channel attention.
+            learnable_prompt: whether to set the prompt as learnable parameters.
+            adaptive_input: whether to use adaptive input.
+            n_buffer: number of buffer in adaptive input.
+            n_history: number of historical feature aggregation, should be less than num_cascades.
+            use_sens_adj: whether to use adjacent sensitivity map estimation.
+            model_version: model version. Default is "promptmr_v2".
             lr: Learning rate.
             lr_step_size: Learning rate step size.
             lr_gamma: Learning rate gamma decay.
             weight_decay: Parameter for penalizing weights norm.
             use_checkpoint: Whether to use checkpointing to trade compute for GPU memory.
-
+            compute_sens_per_coil: (bool) whether to compute sensitivity maps per coil for memory saving
         """
         super().__init__(**kwargs)
         self.save_hyperparameters()
