@@ -4,29 +4,15 @@
 
 This repository contains the official implementation of the paper *Rethinking Deep Unrolled Models for Accelerated MRI Reconstruction.* In this work, we propose effective gradient-based learning and memory-efficient sensitivity map estimation to enhance deep unrolled models for multicoil MRI reconstruction. PromptMR+ is an example of applying these simple yet efficient techniques to the deep unrolled model PromptMR.
 
+<p align="center">
+  <img src="assets/proposed.png" alt="Training GPU Memory on cc-brain dataset" width="600" />
+</p>
+
 ## News
 
 - **Jan 23, 2025:** **Fully** Reproducible code, model weights and reconstruction results were released.
 - **Oct 10, 2024:** PromptMR+ secured 1st place in both tasks of the MICCAI CMRxRecon2024 challenge.
 - **Aug 12, 2024:** Paper accepted as an Oral presentation at ECCV 2024.
-
-<p align="center">
-  <img src="assets/proposed.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
-  <br><em>Proposed techniques.</em>
-</p>
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="assets/gpu_mem_train_cc_brain.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
-      <br><em>Training GPU Memory on cc-brain dataset.</em>
-    </td>
-    <td align="center">
-      <img src="assets/gpu_mem_test_cmr23.png" alt="Test GPU Memory on CMRxRecon2023 dataset" width="400" />
-      <br><em>Test GPU Memory on CMRxRecon2023 dataset.</em>
-    </td>
-  </tr>
-</table>
 
 
 ## Model Weights
@@ -91,6 +77,22 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 > Note: test result is on the official test set. (Not reported in the paper)
 
+</details>
+
+<details>
+  <summary>Memory Performance</summary>
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/gpu_mem_train_cc_brain.png" alt="Training GPU Memory on cc-brain dataset" width="400" />
+      <br><em>Training GPU Memory on cc-brain dataset.</em>
+    </td>
+    <td align="center">
+      <img src="assets/gpu_mem_test_cmr23.png" alt="Test GPU Memory on CMRxRecon2023 dataset" width="400" />
+      <br><em>Test GPU Memory on CMRxRecon2023 dataset.</em>
+    </td>
+  </tr>
+</table>
 </details>
 
 ## Install
