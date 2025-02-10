@@ -17,7 +17,7 @@ This repository contains the official implementation of the paper *Rethinking De
 
 ## Model Weights
 
-We provide the **model weights** and **reconstruction results** for PromptMR/PromptMR+ trained on the FastMRI-knee, FastMRI-brain, Calgary-Campinas-brain, CMRxRecon2023-cardiac and CMRxRecon2024-cardiac datasets, which can be downloaded from the [HuggingFace](https://huggingface.co/hellopipu/PromptMR/tree/main).
+We provide the **model weights** and **reconstruction results** for PromptMR/PromptMR+ trained on the FastMRI-knee, FastMRI-brain, Calgary-Campinas-brain, CMRxRecon2023-cardiac and CMRxRecon2024-cardiac datasets, which can be downloaded [here](https://huggingface.co/hellopipu/PromptMR/tree/main).
 
 <details>
   <summary>CC-brain Results</summary>
