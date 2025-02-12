@@ -101,7 +101,7 @@ python>=3.8.16, torch>=2.3, lightning>=2.2.4, wandb>=0.17.0
 
 ## Data Preparation
 
-check [configs/data_split](configs/data_split)
+Refer to [DATASET.md](DATASET.md) for details.
 
 ## Train
 
