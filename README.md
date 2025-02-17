@@ -12,7 +12,7 @@ This repository contains the official implementation of the paper *Rethinking De
 
 - **Jan 23, 2025:** **Fully** Reproducible code, model weights and reconstruction results were released.
 - **Oct 10, 2024:** PromptMR+ secured 1st place in both tasks of the MICCAI CMRxRecon2024 challenge.
-- **Aug 12, 2024:** Paper accepted as an Oral presentation at ECCV 2024.
+- **Aug 12, 2024:** Paper accepted as an Oral presentation at ECCV 2024 (2.3%).
 
 
 ## Model Weights
@@ -120,6 +120,10 @@ For exmaple, run inference of PromptMR+ on fastmri-knee dataset
 ```python
 python main.py predict --config configs/inference/pmr-plus/fm-knee.yaml
 ```
+
+## License
+
+Non-commercial Research [License](LICENSE.md).
 
 ## Citation
 
