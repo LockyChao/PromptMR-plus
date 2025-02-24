@@ -123,17 +123,17 @@ python main.py predict --config configs/inference/pmr-plus/fm-knee.yaml
 
 ## License
 
-Non-commercial Research [License](LICENSE.md).
+Non-Commercial Research [License](LICENSE.md).
 
 ## Citation
 
 ```bibtex
-@inproceedings{xin2025rethinking,
+@inproceedings{xin2024rethinking,
   title={Rethinking Deep Unrolled Model for Accelerated MRI Reconstruction},
   author={Xin, Bingyu and Ye, Meng and Axel, Leon and Metaxas, Dimitris N},
   booktitle={European Conference on Computer Vision},
   pages={164--181},
-  year={2025},
+  year={2024},
   organization={Springer}
 }
 ```
