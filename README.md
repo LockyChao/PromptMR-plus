@@ -60,8 +60,8 @@ We provide the **model weights** and **reconstruction results** for PromptMR/Pro
 
 | Model         | Cas. | Trained on | Training Acc   | Task1 Avg<br />PSNR/SSIM | Task2 Avg<br />PSNR/SSIM |
 | ------------- | ---- | ---------- | -------------- | ---------------------------- | ---------------------------- |
-| `PromptMR`  | 12   | train      | 4x~24x | 38.28/0.9560                 | 39.18/0.9615                 |
-| `PromptMR+` | 12   | train      | 4x~24x | 39.13/0.9605                 | 39.99/0.9658                 |
+| `PromptMR`  | 12   | 83% train      | 4x~24x | 38.28/0.9560                 | 39.18/0.9615                 |
+| `PromptMR+` | 12   | 83% train      | 4x~24x | 39.13/0.9605                 | 39.99/0.9658                 |
 
 > Note: test result is on the split subset from the official training set (17%). (reported in the STACOM24 paper)
 
