@@ -71,7 +71,7 @@ The original H5 dataset has an issue where the phase infomation is not processed
 ```python
 python prepare_h5_dataset_cc_brain.py \
     --input_folder /path/to/calgary-campinas_version-1.0/CC359/Raw-data/Multi-channel/12-channel \
-    --output_folder /path/to/cc-brain/ \
+    --output_folder /path/to/cc-brain \
     --split_json configs/data_split/cc-brain.json
 ```
 
