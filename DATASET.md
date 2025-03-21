@@ -57,8 +57,8 @@ Download the dataset directly from the fastMRI website.
 
 <table align="center">
   <tr>
-    <th>Origin data</th>
-    <th>Fixed data</th>
+    <th>Original coil data</th>
+    <th>Fixed coil data</th>
   </tr>
   <tr>
     <td><img src="assets/origin.png" alt="Proposed Method" width="400"></td>
@@ -69,7 +69,7 @@ Download the dataset directly from the fastMRI website.
 The original H5 dataset has an issue where the phase infomation is not processed correctly when using the challenge official script. To fix this, we need to preprocess the dataset using the following command:
 
 ```python
-python prepare_dataset_ccbrain.py \
+python prepare_h5_dataset_cc_brain.py \
     --input_folder /path/to/calgary-campinas_version-1.0/CC359/Raw-data/Multi-channel/12-channel \
     --output_folder /path/to/cc-brain/ \
     --split_json configs/data_split/cc-brain.json
@@ -79,7 +79,7 @@ The saved folder structure is as follows:
 
 ```
 /path/to/cc-brain
-│   ├── poisson_sampling
+│   ├── poisson_sampling # Poisson sampling masks
 │   ├── train
 │   ├── val
 │   ├── test_full
