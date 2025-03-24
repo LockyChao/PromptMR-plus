@@ -8,6 +8,7 @@ LICENSE file in the root directory of this source tree.
 from pathlib import Path
 from typing import Dict, Optional
 
+import scipy
 import h5py
 import numpy as np
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
@@ -127,15 +128,19 @@ def loadmat_group(group):
 
 def loadmat(filename):
     """
-    Load Matlab v7.3 format .mat file using h5py.
+    Load Matlab v7.3 format .mat file using h5py; or use scipy.io.loadmat if old mat
     """
-    with h5py.File(filename, 'r') as f:
-        data = {}
-        for k, v in f.items():
-            if isinstance(v, h5py.Dataset):
-                data[k] = v[()]
-            elif isinstance(v, h5py.Group):
-                data[k] = loadmat_group(v)
+    try:
+        with h5py.File(filename, 'r') as f:
+            data = {}
+            for k, v in f.items():
+                if isinstance(v, h5py.Dataset):
+                    data[k] = v[()]
+                elif isinstance(v, h5py.Group):
+                    data[k] = loadmat_group(v)
+    except:
+        data = scipy.io.loadmat(filename)
+        data = data['kspace'].T
     return data
 
 def load_shape(filename):
@@ -160,10 +165,16 @@ def load_kdata(filename):
     '''
     load kdata from .mat file
     return shape: [t,nz,nc,ny,nx]
+    if it is numpy array(old mat file) then no keys
     '''
     data = loadmat(filename)
-    keys = list(data.keys())[0]
-    kdata = data[keys]
-    kdata = kdata['real'] + 1j*kdata['imag']
+    if not isinstance(data, np.ndarray):
+        keys = list(data.keys())[0]
+        kdata = data[keys]
+        kdata = kdata['real'] + 1j*kdata['imag']
+    else:
+        kdata=data
+    if not isinstance(kdata, complex):
+        TypeError # not complex kspace
     return kdata
 
