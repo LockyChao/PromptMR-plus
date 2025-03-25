@@ -21,7 +21,7 @@ data:
             test_mask_type: 'uniform'
             test_acc: 10
         uniform_resolution: null
-        use_seed: True
+        use_seed: true
     combine_train_val: false
     num_adj_slices: *n_adj_slc
     batch_size: 1
@@ -39,7 +39,7 @@ trainer:
   strategy: ddp
   devices: 4
   num_nodes: 1
-  logger: False
+  logger: false
   callbacks:
     -
       class_path: __main__.CustomWriter

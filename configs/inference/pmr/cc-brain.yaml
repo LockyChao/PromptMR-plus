@@ -9,7 +9,7 @@ data:
       init_args:
         mask_func: null
         uniform_resolution: null
-        use_seed: True
+        use_seed: true
         mask_type: 'poisson_disc'
         test_num_low_frequencies: 18
     num_adj_slices: &n_adj_slc 5
@@ -27,7 +27,7 @@ trainer:
   strategy: ddp
   devices: 1
   num_nodes: 1
-  logger: False
+  logger: false
   callbacks:
     -
       class_path: __main__.CustomWriter

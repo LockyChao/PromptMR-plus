@@ -37,7 +37,7 @@ data:
         uniform_resolution:
         - 384
         - 384
-        use_seed: True
+        use_seed: true
     combine_train_val: true
     num_adj_slices: &n_adj_slc 3
     batch_size: 1

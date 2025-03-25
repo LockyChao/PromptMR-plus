@@ -37,7 +37,7 @@ data:
         uniform_resolution:
         - 384
         - 384
-        use_seed: True
+        use_seed: true
     combine_train_val: false
     num_adj_slices: 5
     batch_size: 1
@@ -61,8 +61,8 @@ model:
   init_args:
     lr: 0.0001
     lr_step_size: 35
-    use_checkpoint: true
-    compute_sens_per_coil: true
+    use_checkpoint: true # allow gradient checkpointing, which run slower but can save memory
+    compute_sens_per_coil: true # sensitivity maps are estimated sequentially per coil, which is slower but conserves memory compared to batch processing.
     
 ckpt_path: null # add the path to the checkpoint if you want to resume training
 

@@ -34,7 +34,7 @@ data:
             num_adj_slices: *num_adj_slices
             mask_path: /gpfs/home/bingyx01/mridatasets/cmrxrecon2024/mask/mask_radial.h5
         uniform_resolution: null
-        use_seed: True
+        use_seed: true
     combine_train_val: false
     num_adj_slices: *num_adj_slices
     batch_size: 1

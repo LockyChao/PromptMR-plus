@@ -33,7 +33,7 @@ data:
             allow_any_combination: true
             mask_path: /gpfs/home/bingyx01/mridatasets/cc-brain/poisson_sampling
         uniform_resolution: null
-        use_seed: True
+        use_seed: true
     combine_train_val: false
     num_adj_slices: 5
     batch_size: 1
