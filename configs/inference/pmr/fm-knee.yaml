@@ -11,7 +11,7 @@ data:
         uniform_resolution:
         - 384
         - 384
-        use_seed: True
+        use_seed: true
         mask_type: 'cartesian'
         test_num_low_frequencies: -1
     num_adj_slices: &n_adj_slc 3
@@ -30,7 +30,7 @@ trainer:
   strategy: ddp
   devices: 1
   num_nodes: 1
-  logger: False
+  logger: false
   callbacks:
     -
       class_path: __main__.CustomWriter

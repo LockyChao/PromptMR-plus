@@ -19,8 +19,8 @@ trainer:
         monitor: validation_loss
         mode: min 
         save_top_k: 0 # -1 to save all checkpoints, 5 to save the top 5 checkpoints
-        save_last: True # always save the last checkpoint
-        verbose: True # print checkpoint information
+        save_last: true # always save the last checkpoint
+        verbose: true # print checkpoint information
     # - 
     #   class_path: lightning.pytorch.callbacks.LearningRateMonitor
     #   init_args:
