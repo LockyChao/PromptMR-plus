@@ -45,6 +45,8 @@ The saved H5 file structure is as follows:
 │   │   └── ...
 ```
 
+The `mask_radial.h5` file required for training on the CMRxRecon2024 dataset is available [here](https://huggingface.co/hellopipu/PromptMR/blob/main/mask_files_required_for_training/mask_radial.h5).
+
 ## FastMRI-knee
 
 To split the dataset, follow the instruction in the [PromptMR](https://github.com/hellopipu/PromptMR/blob/main/promptmr_examples/fastmri/README.md) repo.
