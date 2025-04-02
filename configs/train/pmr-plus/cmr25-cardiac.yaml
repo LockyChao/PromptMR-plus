@@ -20,8 +20,8 @@ data:
           init_args:
             num_low_frequencies: 
             - 16
-            num_adj_slices: &num_adj_slices 5
-            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5 # Update path
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/code/PromptMR/mask_files_required_for_training/mask_radial.h5
         uniform_resolution: null
         use_seed: false
     val_transform:
@@ -32,19 +32,19 @@ data:
           init_args:
             num_low_frequencies: 
             - 16
-            num_adj_slices: *num_adj_slices
-            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5  # Update path
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/code/PromptMR/mask_files_required_for_training/mask_radial.h5
         uniform_resolution: null
         use_seed: True
     combine_train_val: false
-    num_adj_slices: *num_adj_slices
+    num_adj_slices: 5
     batch_size: 1
     distributed_sampler: true
     use_dataset_cache_file: false
 
 trainer:
   strategy: ddp
-  devices: 4
+  devices: auto
   num_nodes: 1
   max_epochs: 12
   logger: 

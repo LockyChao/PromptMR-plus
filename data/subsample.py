@@ -798,3 +798,149 @@ class CmrxRecon24TestValMaskFunc(CmrxRecon24MaskFunc):
 
         self.num_adj_slices = num_adj_slices
         self.start_adj, self.end_adj = -(num_adj_slices//2), num_adj_slices//2+1
+
+
+class CmrxRecon25MaskFunc(MaskFunc):
+    """
+    Mask function for the CMRxRecon 2025 challenge with appropriate
+    mask types: Uniform, ktGaussian, ktRadial, ktUniform
+    """
+    def __init__(
+        self,
+        num_low_frequencies: Sequence[int],  # 使用与其他MaskFunc一致的参数名
+        num_adj_slices: int = 5,
+        mask_path: Optional[str] = None,
+        seed: Optional[int] = None,
+        use_ktradial: bool = False  # 默认不使用径向掩码，避免出错
+    ):
+        # 2025年的标准加速率
+        accelerations = [8, 16, 24]  
+        
+        # 使用现有的掩码类
+        self.uniform_mask = FixedLowEquiSpacedMaskFunc(num_low_frequencies, accelerations, allow_any_combination=True, seed=seed)
+        self.kt_uniform_mask = FixedLowEquiSpacedMaskFunc(num_low_frequencies, accelerations, allow_any_combination=True, seed=seed)
+        self.kt_random_mask = FixedLowRandomMaskFunc(num_low_frequencies, accelerations, allow_any_combination=True, seed=seed)
+        
+        # 掩码类型字典
+        self.mask_dict = {
+            'uniform': accelerations,
+            'kt_uniform': accelerations,
+            'kt_gaussian': accelerations,
+        }
+        
+        # 如果提供了径向掩码路径，尝试加载
+        if mask_path and use_ktradial and os.path.exists(mask_path):
+            try:
+                self.radial_mask_bank = self._load_masks(mask_path)
+                self.mask_dict['kt_radial'] = accelerations
+            except Exception as e:
+                print(f"Warning: Failed to load radial masks - {e}")
+        
+        self.masks_pool = list(self.mask_dict.keys())
+        self.rng = np.random.RandomState(seed)
+        self.num_adj_slices = num_adj_slices
+        self.start_adj, self.end_adj = -(num_adj_slices//2), num_adj_slices//2+1
+        self.seed = seed
+
+    def _load_masks(self, mask_path):
+        """加载预计算的径向掩码"""
+        if not os.path.exists(mask_path):
+            raise ValueError(f"Mask path not found: {mask_path}")
+        
+        with h5py.File(mask_path, 'r') as hf:
+            mask_bank = {}
+            for key in hf.keys():
+                mask_bank[key] = torch.from_numpy(np.array(hf[key]))
+        
+        return mask_bank
+
+    def _get_ti_adj_idx_list(self, ti, num_t):
+        """获取时间维度上的相邻索引列表"""
+        adj_idx_list = np.array(range(self.start_adj, self.end_adj)) + ti
+        adj_idx_list = np.clip(adj_idx_list, 0, num_t - 1)
+        return adj_idx_list
+
+    def choose_mask(self):
+        """选择掩码类型，检查径向掩码的可用性"""
+        available_masks = []
+        # 排除不可用的掩码类型
+        for mask_type in self.masks_pool:
+            if mask_type == 'kt_radial' and not hasattr(self, 'radial_mask_bank'):
+                continue
+            available_masks.append(mask_type)
+        
+        if not available_masks:
+            raise ValueError("没有可用的掩码类型")
+        
+        mask_type = self.rng.choice(available_masks)
+        return mask_type
+
+    def __call__(self, shape, offset=None, seed=None, slice_idx=None, num_t=None, num_slc=None):
+        """调用掩码函数生成掩码"""
+        # 如果没有提供必要参数，强制使用uniform掩码
+        if num_t is None or num_slc is None:
+            mask_type = 'uniform'
+        else:
+            mask_type = self.choose_mask()
+            
+        mask, num_low_frequencies = self.sample_mask(mask_type, shape, offset, slice_idx, num_t, num_slc)
+        
+        # 记录选择的掩码类型，但不返回它
+        self.last_mask_type = mask_type
+        
+        # 只返回两个值，与其他MaskFunc保持一致
+        return mask, num_low_frequencies
+
+    def sample_mask(self, mask_type, shape, offset=None, slice_idx=None, num_t=None, num_slc=None):
+        
+        # 当kt_*掩码被选中但必要参数为None时，回退到uniform掩码
+        if mask_type in ['kt_uniform', 'kt_gaussian', 'kt_radial'] and (num_t is None or num_slc is None):
+            print(f"Warning: {mask_type} selected but num_t or num_slc is None. Falling back to uniform mask.")
+            mask_type = 'uniform'
+        
+        if mask_type == 'uniform':
+            mask, num_low_frequencies = self.uniform_mask.sample_uniform_mask(shape, offset, self.rng)
+    
+        elif mask_type == 'kt_uniform':
+            # 确保必要参数存在
+            assert num_t is not None, "num_t cannot be None for kt_uniform mask"
+            assert num_slc is not None, "num_slc cannot be None for kt_uniform mask"
+            mask, num_low_frequencies = self.kt_uniform_mask.sample_kt_mask(
+                shape, offset, self.num_adj_slices, slice_idx, num_t, num_slc, self.rng, self.seed
+            )
+        
+        elif mask_type == 'kt_gaussian':
+            # 这里使用已定义的 kt_random_mask 作为替代
+            mask, num_low_frequencies = self.kt_random_mask.sample_kt_mask(
+                shape, offset, self.num_adj_slices, slice_idx, num_t, num_slc, self.rng
+            )
+        
+        elif mask_type == 'kt_radial':
+            h, w = shape[-3:-1]  # (h, w)
+            acc = self.rng.choice(self.mask_dict[mask_type])
+            # 2025版使用调整后的加速率
+            effective_acc = int(acc * 0.6)  # 按照MATLAB代码缩放
+            num_low_frequencies = 16
+            
+            mask_key = f'acc{effective_acc}_{w}x{h}'
+            if mask_key not in self.radial_mask_bank:
+                print(f"警告：径向掩码 {mask_key} 未找到，回退到kt_gaussian掩码")
+                return self.kt_gaussian.sample_mask(
+                    shape, offset, self.num_adj_slices, slice_idx, num_t, num_slc, self.rng
+                )
+            
+            mask_ = self.radial_mask_bank[mask_key][:num_t]
+            
+            if self.seed is None:  # 训练
+                ti = self.rng.randint(num_t)
+            else:  # 验证
+                ti = slice_idx // num_slc
+            
+            select_list = self._get_ti_adj_idx_list(ti, num_t)
+            mask = mask_[select_list]
+            mask = mask[..., None]  # 维度调整
+        
+        else:
+            raise ValueError(f"不支持的掩码类型: {mask_type}")
+        
+        return mask.float(), num_low_frequencies

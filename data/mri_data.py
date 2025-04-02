@@ -403,10 +403,38 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
                 kspace.append(kspace_volume[idx, zi])
             kspace = np.concatenate(kspace, axis=0)
             
+            # 修改这里：正确处理复数数据
+            if isinstance(kspace, np.ndarray):
+                if np.iscomplexobj(kspace):
+                    # 复数数据：分离实部和虚部，并创建最后维度为2的数组
+                    kspace_real = np.real(kspace).astype(np.float32)
+                    kspace_imag = np.imag(kspace).astype(np.float32)
+                    kspace = np.stack([kspace_real, kspace_imag], axis=-1)
+                else:
+                    # 如果已经是实数，确保是float32
+                    kspace = kspace.astype(np.float32)
+            
+            if isinstance(mask, np.ndarray) and mask is not None:
+                mask = mask.astype(np.float32)
+            if isinstance(target, np.ndarray) and target is not None:
+                if np.iscomplexobj(target):
+                    target_real = np.real(target).astype(np.float32)
+                    target_imag = np.imag(target).astype(np.float32)
+                    target = np.stack([target_real, target_imag], axis=-1)
+                else:
+                    target = target.astype(np.float32)
+            
         if self.transform is None:
             sample = (kspace, mask, target, attrs, fname.name, data_slice, num_t)
         else:
             sample = self.transform(kspace, mask, target, attrs, fname.name, data_slice, num_t, num_slices)
+            # 确保transform返回的张量是float32，但保留复数结构
+            if hasattr(sample, '__dict__'):
+                for key, value in vars(sample).items():
+                    if isinstance(value, torch.Tensor) and value.dtype == torch.float64:
+                        # 保持最后一个维度不变（如果是复数数据）
+                        setattr(sample, key, value.to(torch.float32))
+                        
         return sample
 
 
