@@ -2,7 +2,7 @@ data:
   class_path: pl_modules.DataModule
   init_args:
     slice_dataset: data.CmrxReconSliceDataset
-    data_path: /gpfs/home/bingyx01/mridatasets/cmrxrecon2024
+    data_path: /gpfs/home/bingyx01/mridatasets/cmrxrecon2023
     challenge: multicoil
     data_balancer: 
       class_path: data.BalanceSampler

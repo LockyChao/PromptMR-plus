@@ -216,7 +216,7 @@ class CombinedSliceDataset(torch.utils.data.Dataset):
 
 class CmrxReconSliceDataset(torch.utils.data.Dataset):
     """
-    A PyTorch Dataset for the CMRxRecon 2024 challenge.
+    A PyTorch Dataset for the CMRxRecon 2023 & 2024 challenge.
     """
 
     def __init__(
@@ -285,8 +285,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         # max temporal slice number is 12
         assert num_adj_slices <= 11, "Number of adjacent slices must be less than 11 in CMRxRecon SliceDataset"
         self.num_adj_slices = num_adj_slices
-        self.start_adj, self.end_adj = - \
-            (self.num_adj_slices//2), self.num_adj_slices//2+1
+        self.start_adj, self.end_adj = -(self.num_adj_slices//2), self.num_adj_slices//2+1
 
         self.recons_key = (
             "reconstruction_esc" if challenge == "singlecoil" else "reconstruction_rss"
