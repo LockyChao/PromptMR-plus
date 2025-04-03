@@ -56,6 +56,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_valid_test', type=str, required=True, help='train,valid,or test dataset (valid and test belong to after)')
     parser.add_argument('--year', type=int, required=True, choices=[2025,2024, 2023], help='year of the dataset')
     parser.add_argument('--symbol_only', type=int, default=0, choices=[0,1], help='whether to do symbol link only')
+    parser.add_argument('--only_specific', action='store_true', help='Only process T1w, T2w, and blackblood data')
+
     args = parser.parse_args()
     
     save_folder = args.output_h5_folder
@@ -105,6 +107,9 @@ if __name__ == '__main__':
             if remove_bad_files(save_name) and year == 2024:
                 continue
             
+            # EDIT: Only process files of type T1w, T2w, or blackblood if --only_specific is set
+            if args.only_specific and ftype not in ["T1w", "T2w", "blackblood"]:
+                continue
 
             ##* load kdata
             kdata = load_kdata(ff)
@@ -116,6 +121,10 @@ if __name__ == '__main__':
             if year == 2024:
                 kdata = remove_bad_slices(kdata, save_name)
             
+            # EDIT: If file type is T1w, T2w, or blackblood, unsqueeze kspace data at axis 0
+            if ftype in ["T1w", "T2w", "blackblood"]:
+                kdata = np.expand_dims(kdata, axis=0)
+
             ##* get rss from kdata
             kdata_th = to_tensor(kdata)
             img_coil = ifft2c(kdata_th).to(device)

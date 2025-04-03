@@ -17,7 +17,7 @@ data:
           cine_lvot: 6
           cine_sax: 1
           tagging: 1
-    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDebug2
     distributed_sampler: true
     num_adj_slices: 5
     slice_dataset: data.CmrxReconSliceDataset
@@ -27,12 +27,12 @@ data:
         mask_func:
           class_path: data.subsample.CmrxRecon25MaskFunc
           init_args:
-            mask_path: /common/lidxxlab/cmrchallenge/code/PromptMR/mask_files_required_for_training/mask_radial.h5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
             num_adj_slices: 5
             num_low_frequencies:
             - 16
         uniform_resolution: null
-        use_seed: false
+        use_seed: true
     use_dataset_cache_file: false
     val_transform:
       class_path: data.CmrxReconDataTransform
@@ -40,7 +40,7 @@ data:
         mask_func:
           class_path: data.subsample.CmrxRecon25MaskFunc
           init_args:
-            mask_path: /common/lidxxlab/cmrchallenge/code/PromptMR/mask_files_required_for_training/mask_radial.h5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
             num_adj_slices: 5
             num_low_frequencies:
             - 16

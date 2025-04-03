@@ -1,12 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=CMR2025Train
-#SBATCH --output=logs/_%j.log
+#SBATCH --job-name=CMRscratch
+#SBATCH --output=logs/%j.log
 #SBATCH --error=errors/%j.log
 #SBATCH --partition=gpu
-#SBATCH --cpus-per-task=12
-#SBATCH --mem=200G
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=100G
 #SBATCH --time=168:00:00
-#SBATCH --gres=gpu:l40s:4
+#SBATCH --gres=gpu:l40s:2
+#SBATCH --mail-user=chaowei.wu@cshs.org
+#SBATCH --mail-type=END,FAIL
+
 
 source activate cmr
 
