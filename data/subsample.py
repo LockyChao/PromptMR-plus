@@ -902,7 +902,9 @@ class CmrxRecon25MaskFunc(MaskFunc):
                 Warning(f"mask {f'acc{acc}_{w}x{h}'} not in mask bank, change to kt_random")
                 mask, num_low_frequencies = self.kt_random_mask.sample_kt_mask(shape, offset, self.num_adj_slices, slice_idx, num_t,num_slc, self.rng)
             else:
-                mask_ = self.radial_mask_bank[f'acc{acc}_{w}x{h}'][:num_t]
+                mask_ = self.radial_mask_bank[f'acc{acc}_{w}x{h}']
+                num_t = min(num_t, mask_.shape[0])
+                mask_ = mask_[:num_t]
 
                 if self.seed is None: ##* training
                     ti = self.rng.randint(num_t)
