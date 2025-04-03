@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=CMRpretrained
+#SBATCH --job-name=CMRscratch
 #SBATCH --output=logs/%j.log
 #SBATCH --error=errors/%j.log
 #SBATCH --partition=gpu
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=100G
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=200G
 #SBATCH --time=168:00:00
-#SBATCH --gres=gpu:l40s:2
+#SBATCH --gres=gpu:l40s:4
 #SBATCH --mail-user=chaowei.wu@cshs.org
 #SBATCH --mail-type=END,FAIL
 
@@ -27,7 +27,6 @@ python main.py fit \
        -c $CMRROOT/configs/train/pmr-plus/cmr25-cardiac-upd.yaml \
        -c $CMRROOT/configs/model/pmr-plus.yaml \
        --trainer.devices=auto \
-       --model.init_args.lr=0.0004 \
        --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-plus/CMR2025 \
        --model.init_args.pretrain=True \
        --model.init_args.pretrain_weights_path=/common/lidxxlab/cmrchallenge/code/PromptMR-plus/weights/cmr24-cardiac/promptmr-plus-epoch=11-step=337764.ckpt \

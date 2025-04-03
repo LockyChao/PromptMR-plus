@@ -9,15 +9,24 @@ data:
       class_path: data.BalanceSampler
       init_args:
         ratio_dict:
-          T1map: 2
-          T2map: 6
-          aorta_sag: 1
-          aorta_tra: 1
-          cine_lax: 2
-          cine_lvot: 6
+          T1map: 1
+          T1rho: 2
+          T1w: 2
+          T2map: 1
+          T2smap: 8
+          T2w: 2
+          cine_lax: 1
+          lge_lax: 1
           cine_sax: 1
-          tagging: 1
-    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDebug2
+          lge_sax: 1
+          cine_ot: 5
+          cine_lvot: 8
+          cine_rvot: 8
+          perfusion: 2
+          blackblood: 8
+          flow2d: 4
+
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDebug
     distributed_sampler: true
     num_adj_slices: 5
     slice_dataset: data.CmrxReconSliceDataset

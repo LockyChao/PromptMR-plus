@@ -222,7 +222,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         root: Union[str, Path, os.PathLike],
-        challenge: str,
+        challenge: str = 'multicoil',
         transform: Optional[Callable] = None,
         use_dataset_cache: bool = False,
         sample_rate: Optional[float] = None,
@@ -412,7 +412,9 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
                 else:
                     # 如果已经是实数，确保是float32
                     kspace = kspace.astype(np.float32)
-            
+            # ## EDIT: make the zero kspace a little bit larger
+            # kspace[kspace<1e-12]=1e-16
+
             if isinstance(mask, np.ndarray) and mask is not None:
                 mask = mask.astype(np.float32)
             if isinstance(target, np.ndarray) and target is not None:

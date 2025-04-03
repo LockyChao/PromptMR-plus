@@ -3,10 +3,10 @@
 #SBATCH --output=logs/%j.log
 #SBATCH --error=errors/%j.log
 #SBATCH --partition=gpu
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=100G
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=200G
 #SBATCH --time=168:00:00
-#SBATCH --gres=gpu:l40s:2
+#SBATCH --gres=gpu:l40s:4
 #SBATCH --mail-user=chaowei.wu@cshs.org
 #SBATCH --mail-type=END,FAIL
 
@@ -28,6 +28,5 @@ python main.py fit \
        -c $CMRROOT/configs/train/pmr-plus/cmr25-cardiac-upd.yaml \
        -c $CMRROOT/configs/model/pmr-plus.yaml \
        --trainer.devices=auto \
-       --model.init_args.lr=0.0004 \
        --model.init_args.pretrain=False \
        --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-plus/CMR2025_scratch

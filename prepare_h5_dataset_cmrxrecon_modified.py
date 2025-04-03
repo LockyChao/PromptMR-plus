@@ -121,9 +121,10 @@ if __name__ == '__main__':
             if year == 2024:
                 kdata = remove_bad_slices(kdata, save_name)
             
-            # EDIT: If file type is T1w, T2w, or blackblood, unsqueeze kspace data at axis 0
+            # EDIT: If file type is T1w, T2w, or blackblood, unsqueeze kspace data at axis 0 then repeat
             if ftype in ["T1w", "T2w", "blackblood"]:
                 kdata = np.expand_dims(kdata, axis=0)
+                kdata = np.repeat(kdata, 2, axis=0)
 
             ##* get rss from kdata
             kdata_th = to_tensor(kdata)
