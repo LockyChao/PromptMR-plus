@@ -25,11 +25,176 @@ import torch.utils
 
 from mri_utils.utils import load_shape
 from mri_utils import load_kdata, load_mask
+
+from scipy.linalg import sqrtm, inv
 #########################################################################################################
 # Common functions
 #########################################################################################################
 
+def prewhiten_kspace_5d(kspaceData, is_cartesian=True, edge_fraction=0.25):
+    """
+    Prewhitens 5D k-space data based on noise statistics estimated from its outer edge.
 
+    The input k-space data is assumed to have shape:
+        (nt, nz, nc, nx, ny)
+    with the following interpretation:
+        nt: echoes/time points,
+        nz: k-space phase encode (z-direction),
+        nc: coil channels,
+        nx: k-space readout (x-direction),
+        ny: k-space phase encode (y-direction).
+
+    Noise is estimated from the region in the phase encode directions (nz and ny)
+    that lies furthest from the k-space center (using a threshold of edge_fraction).
+    
+    Parameters:
+        kspaceData (np.ndarray): 5D complex array of shape (nt, nz, nc, nx, ny).
+        is_cartesian (bool): Flag indicating if the acquisition is Cartesian.
+                               (Default: True)
+        edge_fraction (float): Fraction used to define the noise region relative to the full extent.
+                               (Default: 0.25 corresponds to Ny/4 and Nz/4 thresholds.)
+                               
+    Returns:
+        kspaceData_whitened (np.ndarray): Prewhitened k-space data with the same shape as input.
+        Psi (np.ndarray): Noise covariance matrix (nc x nc) used for the prewhitening.
+    """
+    # Get input dimensions
+    nt, nz, nc, nx, ny = kspaceData.shape
+
+    # Compute the centers in the phase-encode directions:
+    DC_ky = (ny - 1) / 2.0  # center along k-y (last dim)
+    DC_kz = (nz - 1) / 2.0  # center along k-z (second dim)
+
+    # Create coordinate arrays for the phase-encode dimensions.
+    # We want a mask of shape (ny, nz) where the first dimension corresponds to k-y and the second to k-z.
+    ky_coords = np.arange(ny)
+    kz_coords = np.arange(nz)
+    # Use 'ij' indexing so that KY has shape (ny, nz)
+    KY, KZ = np.meshgrid(ky_coords, kz_coords, indexing='ij')
+    
+    # Determine the noise mask based on the number of k-z lines.
+    if nz > 3:
+        if is_cartesian:
+            # Select pixels that are at least edge_fraction away from the center in both phase directions.
+            noise_mask = (np.abs(KY - DC_ky) >= ny * edge_fraction) & (np.abs(KZ - DC_kz) >= nz * edge_fraction)
+        else:
+            noise_mask = (np.abs(KZ - DC_kz) >= nz * edge_fraction)
+    else:
+        if is_cartesian:
+            noise_mask = (np.abs(KY - DC_ky) >= ny * edge_fraction) & (KZ == 0)
+        else:
+            noise_mask = (KZ == 0)
+    
+    # --- Noise Covariance Estimation ---
+    # To mimic the MATLAB extraction:
+    # 1. Permute the data so that it maps to (ky, kx, kz, coil, echo).
+    # Our original ordering is (nt, nz, nc, nx, ny)
+    # The permutation we use is: axis 0: ky <- from ny (last dimension),
+    #                            axis 1: kx <- nx,
+    #                            axis 2: kz <- nz,
+    #                            axis 3: coil <- nc,
+    #                            axis 4: echo <- nt.
+    data_perm = np.transpose(kspaceData, (4, 3, 1, 2, 0))
+    # data_perm has shape (ny, nx, nz, nc, nt)
+    
+    ny_dim, nx_dim, nz_dim, nc_dim, nt_dim = data_perm.shape
+    if ny_dim != ny or nz_dim != nz:
+        raise ValueError("Permutation dimensions do not match expected ny and nz sizes.")
+    
+    # In MATLAB, noise samples are taken from:
+    #   kspaceData(t_ind, end, :,:, end)
+    # which in our permuted data corresponds to:
+    #   for each (ky, kz) that falls in the noise region (noise_mask true),
+    #   take the sample at the last index along kx (nx dimension) and last echo.
+    noise_samples_list = []
+    counter = 0
+    for i in range(ny):
+        for j in range(nz):
+            if noise_mask[i, j] and data_perm[i, -1, j, :, -1] is not 0:
+                # data_perm[i, -1, j, :, -1] has shape (nc,)
+                noise_samples_list.append(data_perm[i, -1, j, :, -1])
+                counter += 1
+                if counter >= 1000:
+                    break
+        if counter >= 1000:
+            break
+    noise_samples = np.array(noise_samples_list)  # shape: (num_noise_points, nc)
+    
+    if noise_samples.size == 0:
+        raise ValueError("No noise samples found. Adjust edge_fraction or check input dimensions.")
+
+    print("Estimating noise covariance matrix...")
+    # Compute the noise covariance matrix Psi from the noise samples.
+    # Each row corresponds to one noise sample (over coils).
+    Psi = np.cov(noise_samples, rowvar=False)
+    # Compute an overall standard deviation of the noise (msdev):
+    msdev = np.sqrt(np.trace(Psi) / nc)
+    # Normalize the covariance matrix
+    Psi = Psi / (msdev**2)
+    print("Noise covariance estimation complete.")
+
+    # --- Prewhitening ---
+    print("Prewhitening...")
+    # Reshape the original k-space data so that the coil dimension is the last axis.
+    # We collapse all other dimensions (nt, nz, nx, ny) into one.
+    data_reshaped = np.reshape(kspaceData, (-1, nc))
+    
+    # Compute the matrix square root of Psi, then its inverse.
+    temp = sqrtm(Psi)
+    inv_temp = inv(temp)
+    
+    # Apply the prewhitening transformation: each data sample (row) is multiplied by inv(temp)
+    data_whitened = data_reshaped @ inv_temp  # shape: (num_samples, nc)
+    
+    # Reshape back to the original 5D shape.
+    kspaceData_whitened = np.reshape(data_whitened, kspaceData.shape)
+    
+    # Optionally, recompute the noise standard deviation from the noise region in the whitened data.
+    data_whitened_perm = np.transpose(kspaceData_whitened, (4, 3, 1, 2, 0))
+    noise_samples_whitened_list = []
+    for i in range(ny):
+        for j in range(nz):
+            if noise_mask[i, j]:
+                noise_samples_whitened_list.append(data_whitened_perm[i, -1, j, :, -1])
+    noise_samples_whitened = np.array(noise_samples_whitened_list)
+    msdev_whitened = np.std(noise_samples_whitened.ravel())
+    print("Prewhitening complete. Noise std after prewhitening: {:.4g}".format(msdev_whitened))
+    
+    return kspaceData_whitened, Psi
+
+# ------------------------------
+# Example usage
+# ------------------------------
+if __name__ == "__main__":
+    # Create synthetic data for demonstration.
+    # Let the k-space dimensions be: nt=10, nz=32, nc=8, nx=64, ny=64.
+    nt, nz, nc, nx, ny = 10, 32, 8, 64, 64
+    np.random.seed(42)
+    
+    # Create a synthetic signal in k-space. For instance,
+    # use a central Gaussian (to simulate the true signal)
+    # and add some complex Gaussian noise.
+    x = np.linspace(-1, 1, nx)
+    y = np.linspace(-1, 1, ny)
+    X, Y = np.meshgrid(x, y, indexing='xy')
+    signal_2d = np.exp(-((X**2 + Y**2)*30))
+    
+    # Build a full 5D array with the same signal for each echo and slice,
+    # and add noise.
+    kspaceData = np.zeros((nt, nz, nc, nx, ny), dtype=np.complex64)
+    for t in range(nt):
+        for z in range(nz):
+            for c in range(nc):
+                noise = (np.random.normal(0, 0.05, (nx, ny)) +
+                         1j*np.random.normal(0, 0.05, (nx, ny)))
+                # The signal is added only in the central region for illustration.
+                kspaceData[t, z, c, :, :] = signal_2d + noise
+
+    # Perform prewhitening.
+    kspaceData_whitened, Psi = prewhiten_kspace_5d(kspaceData)
+
+    # (One might compare standard deviations before and after in a noise region.)
+    print("Noise covariance matrix Psi:\n", Psi)
 class RawDataSample(NamedTuple):
     """
     A container for raw data samples.
@@ -232,6 +397,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         raw_sample_filter: Optional[Callable] = None,
         data_balancer: Optional[Callable] = None,
         num_adj_slices: int = 5,
+        use_pre_whiten: bool = False,
     ):
         """
         Args:
@@ -259,6 +425,8 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             raw_sample_filter: Optional; A callable object that takes an raw_sample
                 metadata as input and returns a boolean indicating whether the
                 raw_sample should be included in the dataset.
+            use_pre_whiten: Whether to apply pre-whitening to the k-space data.
+                Defaults to False.
         """
         self.root = root
         if 'train' in str(root):
@@ -280,6 +448,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         self.dataset_cache_file = Path(dataset_cache_file)
 
         self.transform = transform
+        self.use_pre_whiten = use_pre_whiten
 
         assert num_adj_slices % 2 == 1, "Number of adjacent slices must be odd in SliceDataset"
         # max temporal slice number is 12
@@ -402,18 +571,36 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
                 kspace.append(kspace_volume[idx, zi])
             kspace = np.concatenate(kspace, axis=0)
             
-            # 修改这里：正确处理复数数据
+            # Apply pre-whitening if requested
+            if self.use_pre_whiten:
+                # Convert to complex for pre-whitening
+                if not np.iscomplexobj(kspace):
+                    kspace = kspace[..., 0] + 1j * kspace[..., 1]
+                
+                # Get the shape of the k-space data
+                # The kspace array has shape (num_adj_slices * nc, nx, ny)
+                num_adj_slices = len(ti_idx_list)
+                nc = kspace.shape[0] // num_adj_slices
+                nx, ny = kspace.shape[1], kspace.shape[2]
+                
+                # Reshape to 5D for pre-whitening (nt, nz, nc, nx, ny)
+                kspace_5d = kspace.reshape(num_adj_slices, 1, nc, nx, ny)
+                
+                # Apply pre-whitening
+                kspace_whitened, _ = prewhiten_kspace_5d(kspace_5d)
+                
+                # Reshape back to original format
+                kspace = kspace_whitened.reshape(num_adj_slices * nc, nx, ny)
+            
+            # Convert to real/imag format
             if isinstance(kspace, np.ndarray):
                 if np.iscomplexobj(kspace):
-                    # 复数数据：分离实部和虚部，并创建最后维度为2的数组
                     kspace_real = np.real(kspace).astype(np.float32)
                     kspace_imag = np.imag(kspace).astype(np.float32)
+  
                     kspace = np.stack([kspace_real, kspace_imag], axis=-1)
                 else:
-                    # 如果已经是实数，确保是float32
                     kspace = kspace.astype(np.float32)
-            # ## EDIT: make the zero kspace a little bit larger
-            # kspace[kspace<1e-12]=1e-16
 
             if isinstance(mask, np.ndarray) and mask is not None:
                 mask = mask.astype(np.float32)
@@ -429,11 +616,11 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             sample = (kspace, mask, target, attrs, fname.name, data_slice, num_t)
         else:
             sample = self.transform(kspace, mask, target, attrs, fname.name, data_slice, num_t, num_slices)
-            # 确保transform返回的张量是float32，但保留复数结构
+            # Ensure transform returns tensors are float32, but preserve complex structure
             if hasattr(sample, '__dict__'):
                 for key, value in vars(sample).items():
                     if isinstance(value, torch.Tensor) and value.dtype == torch.float64:
-                        # 保持最后一个维度不变（如果是复数数据）
+                        # Keep the last dimension unchanged (if complex data)
                         setattr(sample, key, value.to(torch.float32))
                         
         return sample
