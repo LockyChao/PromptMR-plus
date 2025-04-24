@@ -57,7 +57,9 @@ if __name__ == '__main__':
     parser.add_argument('--year', type=int, required=True, choices=[2025,2024, 2023], help='year of the dataset')
     parser.add_argument('--symbol_only', type=int, default=0, choices=[0,1], help='whether to do symbol link only')
     parser.add_argument('--only_specific', action='store_true', help='Only process T1w, T2w, and blackblood data')
-
+    parser.add_argument('--output_sym_folder', type=str,
+                        default=None,
+                        help='path to save symbolic dataset')
     args = parser.parse_args()
     
     save_folder = args.output_h5_folder
@@ -154,10 +156,15 @@ if __name__ == '__main__':
     print('train files in json: ', len(split_dict['train']))
     print('val files in json: ', len(split_dict['val']))  
     
-    train_folder = save_folder.replace(save_folder.split('/')[-1], 'train')
-    val_folder = save_folder.replace(save_folder.split('/')[-1], 'val')
-    aftervalid_folder = save_folder.replace(save_folder.split('/')[-1], 'after/valid')
-    aftertest_folder = save_folder.replace(save_folder.split('/')[-1], 'after/test')
+    if not args.output_sym_folder:
+        output_sym_folder=save_folder
+    else: 
+        output_sym_folder=args.output_sym_folder
+
+    train_folder = output_sym_folder.replace(save_folder.split('/')[-1], 'train')
+    val_folder = output_sym_folder.replace(save_folder.split('/')[-1], 'val')
+    aftervalid_folder = output_sym_folder.replace(save_folder.split('/')[-1], 'after/valid')
+    aftertest_folder = output_sym_folder.replace(save_folder.split('/')[-1], 'after/test')
     if not os.path.exists(train_folder):
         os.makedirs(train_folder,exist_ok=True)
     if not os.path.exists(val_folder):

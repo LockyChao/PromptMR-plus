@@ -178,8 +178,8 @@ class CustomLightningCLI(LightningCLI):
 
     def instantiate_classes(self):
         super().instantiate_classes()
-        if self.config_init.subcommand == 'predict':
-            self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
+        # if self.config_init.subcommand == 'predict':
+        #     self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
 
 
 def run_cli():

@@ -643,6 +643,8 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             self.year = 2023 
         elif '2024' in str(self.root):
             self.year = 2024
+        elif '2025' in str(self.root):
+            self.year=2025
         else:
             raise ValueError('Invalid dataset root')
         #
@@ -652,7 +654,8 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             
         elif self.year == 2024:
             self.volume_paths = [str(path) for path in volume_paths if '_mask_' not in str(path)]
-        
+        elif self.year == 2025:
+            self.volume_paths = [str(path) for path in volume_paths if '_mask_' not in str(path)]
         self.volume_paths = [pp for pp in self.volume_paths if raw_sample_filter(pp)]
         print('number of inference paths: ', len(self.volume_paths))
             
@@ -742,6 +745,9 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             else:
                 mask = load_mask(mask_path).transpose(0,2,1)
                 mask=mask[:,:,:,None]
+        # elif self.year==2025:
+        #     mask_path = path.replace('FullSample', 'Mask_TaskAll').replace('.mat', '_mask_ktG')
+
 
         attrs = {
             'encoding_size': [kspace_volume.shape[3], kspace_volume.shape[4], 1],
