@@ -95,7 +95,7 @@ trainer:
     -
       class_path: __main__.CustomWriter
       init_args:
-        output_dir: /common/lidxxlab/cmrchallenge/data/CMR2025/DirectInference_model2025
+        output_dir: /common/lidxxlab/chaowei/data/CMR2025/DirectInference_model2025_train
         write_interval: batch_and_epoch
 model:
   class_path: pl_modules.PromptMrModule
@@ -156,4 +156,4 @@ model:
     compute_sens_per_coil: false
     num_log_images: 16
 
-ckpt_path: /common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt
+ckpt_path: /common/lidxxlab/chaowei/PromptMR-plus/checkpoints/baseline/last.ckpt
