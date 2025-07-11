@@ -206,40 +206,61 @@ class KspaceACSExtractor:
         return mask.unsqueeze(0).unsqueeze(-1)
 
     def __call__(self, masked_kspace: torch.Tensor,
-                 mask: torch.Tensor,
-                 num_low_frequencies: Optional[int] = None,
-                 mask_type: Tuple[str] = ("cartesian",),
-                 ) -> torch.Tensor:
+                mask: torch.Tensor,
+                num_low_frequencies: Optional[int] = None,
+                mask_type: Tuple[str] = ("cartesian",),
+                ) -> torch.Tensor:
         if self.mask_center:
-            mask_type = mask_type[0] # assume the same type in a batch
+            mask_type = mask_type[0]  # assume the same type in a batch
             mask_type = 'cartesian' if mask_type in ['uniform', 'kt_uniform', 'kt_random'] else mask_type
-            if mask_type == 'kt_radial':  # cmrxrecon24 pseudo radial
+            print(f"Shape of mask: {mask.shape}")
+                # reshape mask to [b, h, w, two] if needed
+            if mask.ndim == 5:
+                #adj_sli = mask.shape[1] 
+                center_idx = mask.shape[1] // 2
+                mask = mask[:, center_idx]  # shape becomes [b, h, w, 2]
+            elif mask.ndim != 4:
+                raise ValueError(f"Expected mask to have 4 or 5 dimensions, but got shape {mask.shape}")
+
+            if mask_type == 'kt_radial':
                 mask_low = torch.zeros_like(mask)
-                b, adj_nc, h, w, two = mask.shape
-                h_left = h//2 - num_low_frequencies//2
-                w_left = w//2 - num_low_frequencies//2
-                mask_low[:, :, h_left:h_left+num_low_frequencies, w_left:w_left+num_low_frequencies, :] \
-                    = mask[:, :, h_left:h_left+num_low_frequencies, w_left:w_left+num_low_frequencies, :]
-                masked_kspace_acs = masked_kspace*mask_low
-            elif mask_type  == 'cartesian': # fastmri and cmrxrecon (exclude kt_radial)
-                pad, num_low_freqs = self.get_pad_and_num_low_freqs(
-                    mask, num_low_frequencies
-                )
-                masked_kspace_acs = transforms.batched_mask_center(
-                    masked_kspace, pad, pad + num_low_freqs
-                )
-            elif mask_type == 'poisson_disc': # cc-brain
+                b, h, w, two = mask.shape
+                h_left = h // 2 - num_low_frequencies // 2
+                w_left = w // 2 - num_low_frequencies // 2
+                h_left = int(h_left)  # Ensure h_left is an integer
+                w_left = int(w_left)  # Ensure w_left is an integer
+                num_low_frequencies = int(num_low_frequencies)  # Ensure num_low_frequencies is an integer
+
+                mask_low[:, h_left:h_left + num_low_frequencies, w_left:w_left + num_low_frequencies, :] = \
+                    mask[:, h_left:h_left + num_low_frequencies, w_left:w_left + num_low_frequencies, :]
+                masked_kspace_acs = masked_kspace * mask_low
+
+            elif mask_type == 'cartesian':
+                # unsqueeze to match expected shape for get_pad_and_num_low_freqs (which expects 5D)
+                pad, num_low_freqs = self.get_pad_and_num_low_freqs(mask.unsqueeze(1), num_low_frequencies)
+                # batched_mask_center expects 5D input
+                masked_kspace_acs = transforms.batched_mask_center(masked_kspace.unsqueeze(1), pad, pad + num_low_freqs)
+                masked_kspace_acs = masked_kspace_acs.squeeze(1)  # back to 4D
+
+            elif mask_type == 'poisson_disc':
                 ss = masked_kspace.shape[-3:-1]  # (h,w)
-                # * cache low mask in dict to avoid repeated calculation for the same input shape.
                 if ss not in self.low_mask_dict:
-                    mask_low = self.circular_centered_mask(masked_kspace.shape[-3:-1], num_low_frequencies)  # shape (1, 218, 180, 1)
-                    mask_low = mask_low[None].to(masked_kspace.device)
+                    mask_low = self.circular_centered_mask(masked_kspace.shape[-3:-1], num_low_frequencies)  # (1, h, w, 1)
+                    mask_low = mask_low.to(masked_kspace.device)  # [1, h, w, 1]
                     self.low_mask_dict[ss] = mask_low
                 else:
                     mask_low = self.low_mask_dict[ss]
                 masked_kspace_acs = masked_kspace * mask_low
+
             else:
                 raise ValueError('mask_type should be cartesian or poisson_disc')
+
+            # Expand to match mask's depth dimension (e.g., number of slices)
+            if masked_kspace_acs.ndim == 4:
+                # [b, c, h, w, 2] → [b, c * t, h, w, 2]
+                masked_kspace_acs = masked_kspace_acs.unsqueeze(1)
+                
             return masked_kspace_acs
+
         else:
             return masked_kspace

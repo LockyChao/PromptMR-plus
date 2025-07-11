@@ -24,7 +24,8 @@ import torch
 import torch.utils
 
 from mri_utils.utils import load_shape
-from mri_utils import load_kdata, load_mask
+from mri_utils.fftc import fft2c_new, ifft2c_new
+from mri_utils.coil_combine import rss_complex, sens_reduce
 #########################################################################################################
 # Common functions
 #########################################################################################################
@@ -216,7 +217,7 @@ class CombinedSliceDataset(torch.utils.data.Dataset):
 
 class CmrxReconSliceDataset(torch.utils.data.Dataset):
     """
-    A PyTorch Dataset for the CMRxRecon 2023 & 2024 challenge.
+    A PyTorch Dataset for the CMRxRecon 2025 challenge.
     """
 
     def __init__(
@@ -231,7 +232,10 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         num_cols: Optional[Tuple[int]] = None,
         raw_sample_filter: Optional[Callable] = None,
         data_balancer: Optional[Callable] = None,
+        num_low_frequencies: int = 16,
         num_adj_slices: int = 5,
+        pad_H: int = 560,
+        pad_W: int = 336
     ):
         """
         Args:
@@ -259,8 +263,12 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             raw_sample_filter: Optional; A callable object that takes an raw_sample
                 metadata as input and returns a boolean indicating whether the
                 raw_sample should be included in the dataset.
+            pad_size: pad_H and pad_W. Defaults to 560 and 336 respectively, which could cover all training.
+                
         """
         self.root = root
+        self.pad_H = pad_H
+        self.pad_W = pad_W
         if 'train' in str(root):
             self._split = 'train'
         elif 'val' in str(root):
@@ -285,6 +293,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         # max temporal slice number is 12
         assert num_adj_slices <= 11, "Number of adjacent slices must be less than 11 in CMRxRecon SliceDataset"
         self.num_adj_slices = num_adj_slices
+        self.num_low_frequencies = num_low_frequencies
         self.start_adj, self.end_adj = -(self.num_adj_slices//2), self.num_adj_slices//2+1
 
         self.recons_key = (
@@ -316,8 +325,11 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             files = list(Path(root).iterdir())
 
             for fname in sorted(files):
-                with h5py.File(fname, 'r') as hf:
-                    # print('load debug: ', fname, hf.keys())
+                print(fname, flush=True)
+                if (str(fname) == '/common/lidxxlab/cmrchallenge/data/CMR2025/Processed/train/Center002_Siemens_30T_CIMA.X_P016_T1map.h5'):
+                    print(1, flush=True)
+                    continue  # skip this file, it is not a valid CMRxRecon file
+                with h5py.File(fname, 'r') as hf:                  
                     num_slices = hf["kspace"].shape[0]*hf["kspace"].shape[1]
                     metadata = {**hf.attrs}
                 new_raw_samples = []
@@ -379,6 +391,87 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
 
         return replication_prefix + ti_idx_list + replication_suffix
 
+    def _compute_kspace(self, kspace_volume, ti, zi):
+        """
+        compute kspace:
+        kspace_volume: [T, Z, C, H, W, 2] by default. 
+        output: kspace with shape [C, H, W, 2]
+        """
+        kspace = kspace_volume[ti, zi] 
+        # kspace_tmean be mean average on ti_idx_list
+        #kspace_tmean = np.mean(kspace_list, axis=0)
+        if isinstance(kspace, np.ndarray):
+            if np.iscomplexobj(kspace):
+                kspace_real = np.real(kspace).astype(np.float32)
+                kspace_imag = np.imag(kspace).astype(np.float32)
+                kspace = np.stack([kspace_real, kspace_imag], axis=-1)
+            else:
+                kspace = kspace.astype(np.float32)
+        '''
+        if isinstance(kspace_tmean, np.ndarray):
+            if np.iscomplexobj(kspace_tmean):
+                kspace_tmean_real = np.real(kspace_tmean).astype(np.float32)
+                kspace_tmean_imag = np.imag(kspace_tmean).astype(np.float32)
+                kspace_tmean = np.stack([kspace_tmean_real, kspace_tmean_imag], axis=-1)
+            else:
+                kspace_tmean = kspace_tmean.astype(np.float32)
+        '''
+        return kspace
+    
+    def _ksapce_expansion(self, kspace_volume, t_idx_list, zi):
+        """
+        Expand kspace to include adjacent slices.
+        Args:
+            kspace (np.ndarray): Original kspace with shape [C, H, W, 2].
+            t_idx_list (List[int]): List of temporal indices to expand to.
+            zi: int, the slice index in the z dimension.
+        Returns:
+            np.ndarray: Expanded kspace with shape [num_adj_slices, C, H, W, 2].
+        """
+        #use _compute_kspace to get kspace for each t_idx
+        kspace_expanded = []
+        for ti in t_idx_list:
+            kspace_ti = self._compute_kspace(kspace_volume, ti, zi)
+            kspace_expanded.append(kspace_ti)
+        # stack to [num_adj_slices, C, H, W, 2]
+        kspace_expanded = np.stack(kspace_expanded, axis=0)
+        # kspace_expanded shape: [num_adj_slices, C, H, W, 2]
+        return kspace_expanded
+
+    def _compute_sense(self, kspace, num_low_frequencies, eps=1e-8):
+        """
+        Estimate sensitivity maps from ACS for a single subject/slice.
+        
+        Args:
+            kspace (torch.Tensor): [C, H, W, 2].
+            num_low_frequencies (int): Width of the ACS region.
+            eps (float): Small value to avoid division by zero.
+
+        Returns:
+            sens_maps (torch.Tensor): [C, H, W] complex sensitivity maps.
+        """
+        #print("Kspace shape:", kspace.shape)
+        C, H, W, _ = kspace.shape
+        center = W // 2
+        half = num_low_frequencies // 2
+
+        # Extract ACS region
+        kspace = torch.from_numpy(kspace)  # if it’s a NumPy array
+        acs = torch.zeros_like(kspace)
+        acs[:, :, center - half: center + half] = kspace[:, :, center - half: center + half]
+        # Inverse FFT to get coil images
+        coil_imgs = ifft2c_new(acs)
+        # Compute SoS across coils (magnitude)
+        sos = rss_complex(coil_imgs, dim=0)  # [H, W]
+        sos = sos + eps
+        #add a sos dimension to match coil_imgs at last dimension
+        #sos: [H, W] to [H, W, 2]
+        sos = sos.unsqueeze(-1)  # [H, W, 1]
+        # Normalize coil images to get sensitivity maps
+        sens_maps = coil_imgs / sos  # [C, H, W]
+
+        return sens_maps
+        
     def __len__(self):
         return len(self.raw_samples)
 
@@ -387,33 +480,41 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         kspace = []
         with h5py.File(str(fname), 'r') as hf:
             kspace_volume = hf["kspace"]
+            #get the last 2 dimensions as H and W
+            # kspace_volume shape: (T Z, Nc, H, W, 2)
+            H = kspace_volume.shape[-2]
+            W = kspace_volume.shape[-1]
+            #print(H, W, flush=True)
+            #find sense(TODO)
+            #sens_volume = hf["sens"]
             attrs = dict(hf.attrs)
+            attrs.update({'H': H, 'W': W})  # store spatial dims for downstream use
             num_t = attrs['shape'][0]
             num_slices = attrs['shape'][1]
             ti = data_slice//num_slices
             zi = data_slice - ti*num_slices
 
             mask = np.asarray(hf["mask"]) if "mask" in hf else None
+            #mask_type = "cartesian"
             target = hf[self.recons_key][ti,zi] if self.recons_key in hf else None
+            kspace = self._compute_kspace(kspace_volume, ti, zi)
+            sens = self._compute_sense(kspace, self.num_low_frequencies)
+            t_idx = self._get_ti_adj_idx_list(ti, self.num_adj_slices)
+            #expand kspace to [num_ad_slices, C, H, W, 2]
+            kspace = self._ksapce_expansion(kspace_volume, t_idx, zi)
+            # ---------------- pad to (pad_H, pad_W) ------------------------
+            pad_h = max(self.pad_H - H, 0)
+            pad_w = max(self.pad_W - W, 0)
 
-            ti_idx_list = self._get_ti_adj_idx_list(ti, num_t)
+            pad_top    = pad_h // 2
+            pad_bottom = pad_h - pad_top
+            pad_left   = pad_w // 2
+            pad_right  = pad_w - pad_left
 
-            for idx in ti_idx_list:
-                kspace.append(kspace_volume[idx, zi])
-            kspace = np.concatenate(kspace, axis=0)
-            
-            # 修改这里：正确处理复数数据
-            if isinstance(kspace, np.ndarray):
-                if np.iscomplexobj(kspace):
-                    # 复数数据：分离实部和虚部，并创建最后维度为2的数组
-                    kspace_real = np.real(kspace).astype(np.float32)
-                    kspace_imag = np.imag(kspace).astype(np.float32)
-                    kspace = np.stack([kspace_real, kspace_imag], axis=-1)
-                else:
-                    # 如果已经是实数，确保是float32
-                    kspace = kspace.astype(np.float32)
-            # ## EDIT: make the zero kspace a little bit larger
-            # kspace[kspace<1e-12]=1e-16
+            # update attrs to reflect padded size
+            attrs.update({'padded_H': self.pad_H, 'padded_W': self.pad_W,
+                          'pad_top': pad_top, 'pad_bottom': pad_bottom,
+                          'pad_left': pad_left, 'pad_right': pad_right})
 
             if isinstance(mask, np.ndarray) and mask is not None:
                 mask = mask.astype(np.float32)
@@ -424,22 +525,69 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
                     target = np.stack([target_real, target_imag], axis=-1)
                 else:
                     target = target.astype(np.float32)
-            
+
         if self.transform is None:
-            sample = (kspace, mask, target, attrs, fname.name, data_slice, num_t)
+            sample = (kspace, sens, mask, target, attrs, fname.name, data_slice, num_t)
         else:
-            sample = self.transform(kspace, mask, target, attrs, fname.name, data_slice, num_t, num_slices)
-            # 确保transform返回的张量是float32，但保留复数结构
-            if hasattr(sample, '__dict__'):
-                for key, value in vars(sample).items():
-                    if isinstance(value, torch.Tensor) and value.dtype == torch.float64:
-                        # 保持最后一个维度不变（如果是复数数据）
-                        setattr(sample, key, value.to(torch.float32))
+            sample = self.transform(kspace, sens, mask, target, attrs, fname.name, data_slice, num_t, num_slices)
+            #print("sample masked", flush=True)
+            
+        masked_kspace = sample[0]
+        #masked_kspace = masked_kspace[None, ...]
+        #also expand sens to (1, Nc, H, W, 2)
+        if sens is not None:
+            sens = sens[None, ...]
+            #ksapce and sens to torch
+        if isinstance(masked_kspace, np.ndarray):
+            masked_kspace = torch.from_numpy(masked_kspace)
+        if isinstance(sens, np.ndarray):
+            sens = torch.from_numpy(sens)
+        input_img = sens_reduce(masked_kspace, sens)   
+        input_img = input_img.detach().cpu().numpy().astype(np.float32)
+        input_img = input_img.squeeze(0)
+        img = input_img[0][..., 0]  # shape: (H, W)       
+        #print shape of input_img and target
+
+        input_img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)))
+        target = np.pad(target, ((pad_top, pad_bottom), (pad_left, pad_right)))
+
+        # ----------- Normalize input_img and target using their own mean/std -----------
+        if target is not None:
+            # Normalize target
+            target_mean = target.mean()
+            target_std = target.std()
+            target = (target - target_mean) / (target_std + 1e-5)
+
+            # Normalize input_img
+            input_mean = input_img.mean()
+            input_std = input_img.std()
+            input_img = (input_img - input_mean) / (input_std + 1e-5)
+
+            # Store means and stds for possible denormalization
+            attrs["input_mean"] = float(input_mean)
+            attrs["input_std"] = float(input_std)
+            attrs["target_mean"] = float(target_mean)
+            attrs["target_std"] = float(target_std)
+        # ---------------------------------------------------------------------------
+
+        sample = (input_img, target, attrs, fname.name, data_slice, num_t, num_slices)
+
+        #other output options:
+        #kspace: original kspace, size[adj_slice, Nc, H, W, 2]
+        #masked_kspace: masked kspace
+        
+        #print('input_img shape: ', input_img.shape, 'target shape: ', target.shape, flush=True)        
+        if hasattr(sample, '__dict__'):
+            for key, value in vars(sample).items():
+                if isinstance(value, torch.Tensor) and value.dtype == torch.float64:
+                    # 保持最后一个维度不变（如果是复数数据）
+                    setattr(sample, key, value.to(torch.float32))
                         
         return sample
 
 
 class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
+#TODO: accomodate the 2025 dataset
     def __init__(
         self,
         root: Union[str, Path, os.PathLike],
@@ -533,6 +681,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         replication_suffix = max(self.end_adj - end_lim, 0) * ti_idx_list[-1:]
 
         return replication_prefix + ti_idx_list + replication_suffix
+
     
     def _load_volume(self, path):
         """

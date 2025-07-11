@@ -832,6 +832,7 @@ class CmrxRecon25MaskFunc(MaskFunc):
         self.kt_uniform_mask = FixedLowEquiSpacedMaskFunc(num_low_frequencies, [4,8,12,16,20,24], allow_any_combination=True, seed=seed )
         self.kt_random_mask = FixedLowRandomMaskFunc(num_low_frequencies, [4,8,12,16,20,24], allow_any_combination=True, seed=seed )
         self.radial_mask_bank = self._load_masks(mask_path)
+        #print(self.radial_mask_bank.keys(), flush=True)
 
         # mask_dict is set according to cmrxrecon24 challenge settings
         self.mask_dict = {#'uniform':[4,8,10],
@@ -879,12 +880,13 @@ class CmrxRecon25MaskFunc(MaskFunc):
         self.seed = seed
         with temp_seed(self.rng, seed):
             mask_type = self.choose_mask()
+            print(mask_type, flush=True)
             mask, num_low_frequencies = self.sample_mask(mask_type, shape, offset, slice_idx, num_t, num_slc)
 
         return mask, num_low_frequencies, mask_type
 
     def sample_mask(self,mask_type, shape,offset=None,  slice_idx=None,num_t=None,num_slc=None):
-        
+        #All mask size: [adj_slice, 1, H, W, 2]
         if mask_type=='uniform':
             mask, num_low_frequencies = self.uniform_mask.sample_uniform_mask(shape, offset, self.rng) #, self.seed)
         elif mask_type=='kt_uniform':
@@ -896,7 +898,7 @@ class CmrxRecon25MaskFunc(MaskFunc):
             h,w = shape[-3:-1] # (h,w)
             acc = self.rng.choice(self.mask_dict[mask_type])
             num_low_frequencies = 16
-            
+            #print(f"acc: {acc}, w: {w}, h: {h}", flush=True)
             ##Chaowei: check whether exist in mask bank 
             if f'acc{acc}_{w}x{h}' not in self.radial_mask_bank.keys():
                 Warning(f"mask {f'acc{acc}_{w}x{h}'} not in mask bank, change to kt_random")
@@ -915,6 +917,7 @@ class CmrxRecon25MaskFunc(MaskFunc):
                 
                 mask = mask_[select_list]
                 mask = mask[...,None] # torch.Size([5, 448, 204,1])
+                print(mask.shape, flush=True)
 
         else:
             raise ValueError(f"{mask_type} not supported")

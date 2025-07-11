@@ -40,7 +40,7 @@ data:
             num_adj_slices: 5
             num_low_frequencies:
             - 16
-        uniform_resolution: null
+        uniform_resolution: Null
         use_seed: true
     use_dataset_cache_file: false
     val_transform:
@@ -53,10 +53,10 @@ data:
             num_adj_slices: 5
             num_low_frequencies:
             - 16
-        uniform_resolution: null
+        uniform_resolution: Null
         use_seed: true
 model:
-  class_path: pl_modules.PromptMrModule
+  class_path: pl_modules.PromptDDPMModule
   init_args:
     lr: 0.0002
     lr_step_size: 11
@@ -69,6 +69,6 @@ trainer:
       save_dir: exp/cmr25-cardiac/pmr-plus
       tags:
       - cmr25-cardiac
-  max_epochs: 12
+  max_epochs: 30
   num_nodes: 1
   strategy: ddp

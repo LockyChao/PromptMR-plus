@@ -1,0 +1,76 @@
+data:
+  class_path: pl_modules.DataModule
+  init_args:
+    slice_dataset: data.CmrxReconSliceDataset
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed
+    #data_path: /common/lidxxlab/cmrchallenge/data/CMR_sample_folder_chushu
+    challenge: multicoil
+    data_balancer:
+      class_path: data.BalanceSampler
+      init_args: 
+        ratio_dict:
+          T1map: 1
+          T1rho: 2
+          T1w: 2
+          T2map: 1
+          T2smap: 8
+          T2w: 2
+          cine_lax: 1
+          lge_lax: 1
+          cine_sax: 1
+          lge_sax: 1
+          cine_ot: 5
+          cine_lvot: 8
+          cine_rvot: 8
+          perfusion: 2
+          blackblood: 8
+          flow2d: 4
+        
+    train_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc  # You may need to create this class
+          init_args:
+            num_low_frequencies: 
+            - 16
+            num_adj_slices: 1
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: false
+    val_transform:
+      class_path: data.CmrxReconDataTransform
+      init_args:
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc  # Same mask class as above
+          init_args:
+            num_low_frequencies: 
+            - 16
+            num_adj_slices: 1
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+        uniform_resolution: null
+        use_seed: True
+    combine_train_val: false
+    num_adj_slices: 1
+    batch_size: 1
+    distributed_sampler: true
+    use_dataset_cache_file: false
+
+trainer:
+  strategy: ddp
+  devices: auto
+  num_nodes: 1
+  max_epochs: 500
+  precision: 16
+  logger: 
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      save_dir: exp/cmr25-cardiac/pmr-ddpm-news
+      tags: [cmr25-cardiac-ddpm]
+      name: cmr25-cardiac-pmr-plus-ddpm
+
+model:
+  class_path: pl_modules.PromptDDPMModule
+  init_args: {}
+
+ckpt_path: null

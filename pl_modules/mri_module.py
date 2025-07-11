@@ -79,9 +79,14 @@ class MriModule(L.LightningModule):
         # self.training_step_outputs.clear()
 
     # def validation_step_end(self, val_logs):
+    #def on_validation_batch_end(self):
+        #pass
+
     def on_validation_batch_end(self, val_logs, batch, batch_idx, dataloader_idx=0):
+        pass
         # print('ddddddddddddddddddddddd............')
         # check inputs
+        '''
         for k in (
             "batch_idx",
             "fname",
@@ -199,6 +204,7 @@ class MriModule(L.LightningModule):
         #     "ssim_vals": dict(ssim_vals),
         #     "max_vals": max_vals,
         # }
+        '''
 
         
     def log_image(self, key, images, captions):
@@ -215,7 +221,9 @@ class MriModule(L.LightningModule):
 
 
 
-    def on_validation_epoch_end(self):        
+    def on_validation_epoch_end(self):  
+        pass
+        '''      
         # aggregate losses
         losses = []
         mse_vals = defaultdict(dict)
@@ -294,9 +302,12 @@ class MriModule(L.LightningModule):
 
         # print('debug epoch end: ', len(self.validation_step_outputs), metrics["ssim"]/tot_examples, tot_examples)
         self.validation_step_outputs.clear()
+        '''
 
 
     def test_epoch_end(self, test_logs):
+        pass
+        '''
         outputs = defaultdict(dict)
 
         # use dicts for aggregation to handle duplicate slices in ddp mode
@@ -318,3 +329,4 @@ class MriModule(L.LightningModule):
         self.print(f"Saving reconstructions to {save_path}")
 
         save_reconstructions(outputs, save_path)
+        '''

@@ -1,3 +1,11 @@
 */__pycache__
+CMRxRecon/
+*/recon_matlab
+*/post_diff
+*/refs
 test_func/
+experiments/
 *.log
+**/__pycache__/
+DDS/
+refs/

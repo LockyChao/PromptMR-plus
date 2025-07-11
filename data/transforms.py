@@ -22,10 +22,14 @@ def to_tensor(data: np.ndarray) -> torch.Tensor:
     if np.iscomplexobj(data):
         data = np.stack((data.real, data.imag), axis=-1)
 
+    if isinstance(data, torch.Tensor):
+        return data    
+    
     return torch.from_numpy(data)
 
 def apply_mask(
     data: torch.Tensor,
+    #data_tmean: torch.Tensor,
     mask_func: MaskFunc,
     offset: Optional[int] = None,
     seed: Optional[Union[int, Tuple[int, ...]]] = None,
@@ -65,6 +69,7 @@ def apply_mask(
         else:
             mask_type = 'cartesian'
         mask, num_low_frequencies = mask_func(shape, offset, seed)
+    #print("mask shape:", mask.shape, shape, flush=True)
     if padding is not None:
         mask[..., : padding[0], :] = 0
         mask[..., padding[1] :, :] = 0  # padding value inclusive on right of zeros
@@ -73,6 +78,7 @@ def apply_mask(
         mask = mask.repeat_interleave(data.shape[0]//mask.shape[0], dim=0)
     
     masked_data = data * mask + 0.0  # the + 0.0 removes the sign of the zeros
+    #masked_tmean = data_tmean * mask + 0.0
 
     return masked_data, mask, num_low_frequencies, mask_type
 
@@ -267,6 +273,7 @@ class PromptMRSample(NamedTuple):
     """
 
     masked_kspace: torch.Tensor
+    sens: Optional[torch.Tensor]
     mask: torch.Tensor
     num_low_frequencies: Optional[int]
     target: torch.Tensor
@@ -310,6 +317,7 @@ class CmrxReconDataTransform:
     def __call__(
         self,
         kspace: np.ndarray,
+        sens: np.ndarray,
         mask: np.ndarray,
         target: np.ndarray,
         attrs: Dict,
@@ -342,14 +350,16 @@ class CmrxReconDataTransform:
             max_value = 0.0
 
         kspace_torch = to_tensor(kspace)
+        sens_torch = to_tensor(sens)
         seed = None if not self.use_seed else tuple(map(ord, fname)) # so in validation, the same fname (volume) will have the same acc
         acq_start = attrs["padding_left"]
         acq_end = attrs["padding_right"]
+        #acq_start and acq_end is set to 0, W.
+        #print(acq_start, acq_end, flush=True)
         crop_size = (attrs["recon_size"][0], attrs["recon_size"][1]) 
 
-
         if self.mask_func is not None:
-            masked_kspace, mask_torch, num_low_frequencies,mask_type = apply_mask(
+            masked_kspace, mask_torch, num_low_frequencies, mask_type = apply_mask(
                 kspace_torch, self.mask_func, seed=seed, padding=(acq_start, acq_end), slice_idx=slice_num, num_t=num_t,num_slc=num_slc
             )
         else:
@@ -357,14 +367,16 @@ class CmrxReconDataTransform:
             mask_torch = to_tensor(mask)
             mask_torch[:, :, :acq_start] = 0
             mask_torch[:, :, acq_end:] = 0
-            if 'ktRadial' in fname:
-                mask_type = 'kt_radial'
-            else:
-                mask_type = 'cartesian'
+            #if 'ktRadial' in fname:
+                #mask_type = 'kt_radial'
+            #else:
+                #mask_type = 'cartesian'
+            mask_type = 'cartesian'
             num_low_frequencies = self.num_low_frequencies
             
         sample = PromptMRSample(
             masked_kspace=masked_kspace,
+            sens=sens_torch,
             mask=mask_torch.to(torch.bool),
             num_low_frequencies=num_low_frequencies,
             target=target_torch,
@@ -512,8 +524,6 @@ class FastmriDataTransform:
             masked_kspace, mask_torch, num_low_frequencies, mask_type = apply_mask(
                 kspace_torch, self.mask_func, seed=seed, padding=(acq_start, acq_end)
             )
-
-
         else:
             masked_kspace = kspace_torch
             shape = np.array(kspace_torch.shape)

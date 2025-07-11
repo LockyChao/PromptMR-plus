@@ -10,12 +10,14 @@ from collections import defaultdict
 import yaml
 import torch
 import numpy as np
+from torch.utils.data._utils.collate import default_collate
 
 from lightning.pytorch.cli import LightningCLI, SaveConfigCallback
 from lightning.pytorch.callbacks import BasePredictionWriter
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 from mri_utils import save_reconstructions
-from pl_modules import PromptMrModule
+from pl_modules import PromptDDPMModule
 
 
 def preprocess_save_dir():
@@ -39,7 +41,7 @@ def preprocess_save_dir():
                             # Safely navigate to trainer.logger.save_dir
                             trainer = config.get("trainer", {})
                             logger = trainer.get("logger", {})
-                            if isinstance(logger, dict) :  # Ensure logger is a dictionary
+                            if isinstance(logger, dict):  # Ensure logger is a dictionary
                                 yaml_save_dir = logger.get(
                                     "init_args", {}).get("save_dir")
                                 if yaml_save_dir:
@@ -140,7 +142,7 @@ class CustomWriter(BasePredictionWriter):
         pass
         
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
-
+        '''
         gathered = [None] * torch.distributed.get_world_size()
         gathered_indices = [None] * torch.distributed.get_world_size()
         torch.distributed.all_gather_object(gathered, predictions)
@@ -173,6 +175,8 @@ class CustomWriter(BasePredictionWriter):
         # # Save the reconstructions
         save_reconstructions(outputs, num_slc_dict, self.output_dir / "reconstructions")
         print(f"Done! Reconstructions saved to {self.output_dir / 'reconstructions'}")
+        '''
+        pass  # Placeholder for actual implementation
 
 class CustomLightningCLI(LightningCLI):
 
@@ -182,14 +186,55 @@ class CustomLightningCLI(LightningCLI):
             self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
 
 
+def custom_collate_fn(batch):
+    # Handle variable-sized tensors in the batch
+    try:
+        return default_collate(batch)
+    except RuntimeError as e:
+        print(f"Collate error: {e}")
+        # Handle the error or filter problematic data
+        filtered_batch = [item for item in batch if item is not None]
+        return default_collate(filtered_batch)
+
+
 def run_cli():
 
     preprocess_save_dir()
+
+    checkpoint_callback = ModelCheckpoint(
+        monitor="train_loss",
+        filename="epoch{epoch:02d}-loss{train_loss:.4f}",
+        save_top_k=1,
+        save_last=True,
+        mode="min",
+        every_n_epochs=3,
+    )
 
     cli = CustomLightningCLI(
         save_config_callback=CustomSaveConfigCallback,
         save_config_kwargs={"overwrite": True},
     )
+    cli.trainer.callbacks.append(checkpoint_callback)
+
+    # Update DataLoader to use the custom collate function
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        collate_fn=custom_collate_fn,  # Use custom collate function
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=custom_collate_fn,  # Use custom collate function
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+
 
 if __name__ == "__main__":
     run_cli()

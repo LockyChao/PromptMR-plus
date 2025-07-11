@@ -6,8 +6,21 @@ import copy
 from mri_utils import SSIMLoss
 import torch.nn.functional as F
 import importlib
+from configs.ddpm_continuous import get_config
+import os
+import time
+import logging
+from models import ddpm, sde_lib
+from models import losses
+from models import model_utils as mutils
+from models.ema import ExponentialMovingAverage
+from absl import flags
+import torch
+from models.ddpm_utils import *
+import wandb
+import torchvision.utils as vutils
 
-def get_model_class(module_name, class_name="PromptMR"):
+def get_model_class(module_name, class_name="PromptDDPM"):
     """
     Dynamically imports the specified module and retrieves the class.
 
@@ -22,6 +35,166 @@ def get_model_class(module_name, class_name="PromptMR"):
     model_class = getattr(module, class_name)
     return model_class
 
+class PromptDDPMModule(MriModule):
+
+    def __init__(self):
+        super().__init__()
+        self.config = config = get_config()
+        self.save_hyperparameters()
+
+        self.model = mutils.create_model(config)
+        self.ema = ExponentialMovingAverage(self.model.parameters(), decay=config.model.ema_rate)
+        self.scaler = get_data_scaler(config)
+        optimizer = losses.get_optimizer(config, self.model.parameters())
+        self.state = dict(optimizer=optimizer, model=self.model, ema=self.ema, step=0)
+
+        sde = sde_lib.VPSDE(config)
+        optimize_fn = losses.optimization_manager(config)
+        self.train_step_fn = losses.get_step_fn(
+            config,
+            sde,
+            train=True,
+            optimize_fn=optimize_fn,
+            reduce_mean=config.training.reduce_mean,
+            continuous=config.training.continuous,
+            likelihood_weighting=config.training.likelihood_weighting,
+        )
+        
+    def _load_pretrain_weights(self):
+        # load pretrain weights
+        if not self.pretrain:
+            print('Train from scratch, no pretrain weights loaded')
+            return
+        
+        print(f"loading pretrain weights from {self.pretrain_weights_path}")
+        checkpoint = torch.load(self.pretrain_weights_path)
+        upd_state_dict = {}
+        for k, v in checkpoint['state_dict'].items():
+            if 'loss.w' in k:  # Skip this key
+                continue
+            new_key = k.replace('promptmr.', '')  # or just remove 'model.'
+            upd_state_dict[new_key] = v
+        self.promptmr.load_state_dict(upd_state_dict)
+
+    def configure_optimizers(self):
+        optim = losses.get_optimizer(self.config, self.model.parameters())
+
+        scheduler = {
+            'scheduler': torch.optim.lr_scheduler.StepLR(optim, step_size=100, gamma=0.8),
+            'interval': 'epoch',     # or 'step' if you want to update every batch
+            'frequency': 1,          # apply every 1 epoch
+            'monitor': None          # can omit for StepLR, needed for ReduceLROnPlateau
+        }
+        return [optim], [scheduler]
+    
+    def forward(self, x, t, cond=None):
+        ##return self.model(x, t, cond) 
+        pass  
+
+    def training_step(self, batch, batch_idx):
+        #sample = (input_img, gt, attrs, fname.name, data_slice, num_t, num_slices)
+        zfilled, label, attrs, fname, data_slice, num_t, num_slices = batch
+
+        if batch_idx < 3 and self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
+            zfilled_grid = vutils.make_grid(zfilled[:4, None].detach().cpu(), normalize=True, scale_each=True)
+            label_grid = vutils.make_grid(label[:4, None].detach().cpu(), normalize=True, scale_each=True)
+
+            self.logger.experiment.log({
+                "train_input_zfilled": wandb.Image(zfilled_grid, caption="Input (zfilled)"),
+                "train_label": wandb.Image(label_grid, caption="Label"),
+                "global_step": self.global_step
+            })
+            
+        # Execute one training step
+        loss, predict, target = self.train_step_fn(self.state, label, zfilled)
+        #keep the first channel of predict and target
+        predict = predict[:, 0:1, :, :]
+        target = target[:, 0:1, :, :]
+        
+        #if batch_idx < 3, log predict and target
+        if batch_idx < 3 and self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
+            predict_grid = vutils.make_grid(predict[:4, None].detach().cpu(), normalize=True, scale_each=True)
+            target_grid = vutils.make_grid(target[:4, None].detach().cpu(), normalize=True, scale_each=True)
+
+            self.logger.experiment.log({
+                "train_predictions": wandb.Image(predict_grid, caption="Predictions"),
+                "train_targets": wandb.Image(target_grid, caption="Targets"),
+                "global_step": self.global_step
+            })
+
+        self.log("train_loss", loss, prog_bar=True)
+
+        if torch.isnan(loss):
+            raise ValueError("NaN loss encountered during training.")
+
+        #print(torch.cuda.memory_summary(device=None, abbreviated=False), flush=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        # Unpack batch
+        if batch_idx >= 3:
+            return None
+        zfilled, label, attrs, fname, data_slice, num_t, num_slices = batch
+        device = zfilled.device
+
+        # Initialize DDIM parameters
+        num_steps = 100
+        config = self.config
+        sde = sde_lib.VPSDE(config)
+        zfilled = zfilled[:, None, :, :]  # Ensure zfilled is [B, C, H, W]
+        shape = zfilled.shape  # shape = [B, C, H, W]
+        x = torch.randn(shape, device=device)  # Start from noise
+
+        #concat x and zfilled
+        x = torch.cat([x, zfilled], dim=1)  # shape [B, C+1, H, W]
+
+        # If using EMA, apply it to the model
+        if config.model.ema_rate > 0:
+            self.state["ema"].store(self.model.parameters())
+            self.state["ema"].copy_to(self.model.parameters())
+
+        # Time discretization
+        timesteps = torch.linspace(1.0, 1e-3, num_steps, device=device)
+
+        # Reverse sampling loop (simplified DDIM style)
+        for i, t in enumerate(timesteps):
+            t_tensor = torch.ones((shape[0],), device=device) * t  # shape [B]
+            # Predict noise or score
+            score_fn = mutils.get_score_fn(
+                model=self.model,
+                sde=sde,
+                train=False
+            )
+            score = score_fn(x, t_tensor)
+
+            # Euler update
+            dt = -1.0 / num_steps
+            drift, diffusion = sde.sde(x, t_tensor)
+            x = x + drift * dt + diffusion[:, None, None, None] * score * torch.sqrt(torch.tensor(-dt, device=score.device))
+
+        # Compute simple MSE for validation loss
+        pred = x[:, 0:1, :, :]  # Keep only the first channel for prediction
+        target = label[:, None, :, :]  # Ensure target is [B, C, H, W]
+        loss = F.mse_loss(pred, target)
+
+        self.log("val_loss", loss, prog_bar=True)
+
+        if batch_idx < 3 and self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
+            # Keep only the first channel for logging
+            recon_grid = vutils.make_grid(pred[:4, 0:1].detach().cpu(), normalize=True, scale_each=True)
+            target_grid = vutils.make_grid(target[:4, 0:1].detach().cpu(), normalize=True, scale_each=True)
+
+            self.logger.experiment.log({
+                "val_reconstructions": wandb.Image(recon_grid, caption="Reconstructed"),
+                "val_targets": wandb.Image(target_grid, caption="Ground Truth"),
+                "global_step": self.global_step
+            })
+        
+        return {"val_loss": loss}
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        pass
+        
 class PromptMrModule(MriModule):
 
     def __init__(
@@ -42,20 +215,6 @@ class PromptMrModule(MriModule):
         n_bottleneck_cab: int = 3,
         no_use_ca: bool = False,
         learnable_prompt: bool = False,
-        adaptive_input: bool = True,
-        n_buffer: int = 4,
-        n_history: int = 0,  # different than configs
-        use_sens_adj: bool = True,
-        model_version: str = "promptmr_v2",
-        lr: float = 0.0002,
-        lr_step_size: int = 11,
-        lr_gamma: float = 0.1,
-        weight_decay: float = 0.01,
-        use_checkpoint: bool = False,
-        compute_sens_per_coil: bool = False,
-        pretrain: bool = False,
-        pretrain_weights_path: str = None,
-        **kwargs,
     ):
         """
         Args:
@@ -189,11 +348,13 @@ class PromptMrModule(MriModule):
         )
         return [optim], [scheduler]
     
-    def forward(self, masked_kspace, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False):
-        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil)   
+    def forward(self, masked_kspace, masked_kspace_tmean, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False):
+        return self.promptmr(masked_kspace, masked_kspace_tmean, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil)   
 
     def training_step(self, batch, batch_idx):
-        output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
+        #print batch contents 
+        print(batch.mask_type)
+        output_dict = self(batch.masked_kspace, batch.masked_kspace_tmean, batch.mask, batch.num_low_frequencies, batch.mask_type,
                            use_checkpoint=self.use_checkpoint, compute_sens_per_coil=self.compute_sens_per_coil)
         output = output_dict['img_pred']
         target, output = transforms.center_crop_to_smallest(
@@ -212,7 +373,7 @@ class PromptMrModule(MriModule):
 
     def validation_step(self, batch, batch_idx):
 
-        output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
+        output_dict = self(batch.masked_kspace, batch.masked_kspace_tmean, batch.mask, batch.num_low_frequencies, batch.mask_type,
                            compute_sens_per_coil=self.compute_sens_per_coil)
         output = output_dict['img_pred']
         img_zf = output_dict['img_zf']
@@ -257,4 +418,4 @@ class PromptMrModule(MriModule):
             'fname': batch.fname,
             'num_slc':  num_slc
         }
-        
+

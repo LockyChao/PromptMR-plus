@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
     #* use random input
     rand_input = torch.randn(1, n_adj_slc*n_coil, 218, 170, 2)
-    rand_mask = torch.randn(1, 1, 218, 170, 1).bool()
+    rand_mask = torch.randn(1, n_adj_slc, 218, 170, 1).bool()
+    rand_a = torch.where(rand_mask, rand_input, zero)
     num_low_frequencies = torch.tensor([18])
 
     output = model_promptmr(rand_input.to(device), rand_mask.to(device), num_low_frequencies.to(device))

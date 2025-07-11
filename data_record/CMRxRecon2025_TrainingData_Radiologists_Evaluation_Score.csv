@@ -1,0 +1,222 @@
+﻿Center,Manufacturer,Split,AnonPatientID,cine_sax,cine_lax,cine_lax_2ch,cine_lax_r2ch,cine_lax_3ch,cine_lax_4ch,cine_ot,cine_lvot,cine_rvot,blackblood,T1w,T2w,T1rho,T1map,T1mappost,T2map,T2smap,flow2d,perfusion,lge_sax,lge_lax,lge_lax_2ch,lge_lax_3ch,lge_lax_4ch
+Center001,UIH_30T_umr780,Train,P001,,,,,5,5,,,,,,3,,5,5,5,  ,,5,,,5,,4
+Center001,UIH_30T_umr780,Train,P002,5,,,,,,,,,,,  ,5,5,,5,   ,,,,,,,
+Center001,UIH_30T_umr780,Train,P003,5,,,,5,5,,,,,,3,5,5,,5,3,,,,,,,
+Center001,UIH_30T_umr780,Train,P004,5,,,,5,5,,,,,,3,5,5,,5,   ,,,,,,,
+Center001,UIH_30T_umr780,Train,P005,5,,,,5,5,,,,,,4,5,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P006,5,,,,,5,,,,,,5,5,5,5,5,4,,5,,,3,,5
+Center001,UIH_30T_umr780,Train,P008,5,,,,5,4,,,,,,3,3,5,,,,,,,,,,
+Center001,UIH_30T_umr780,Train,P009,5,,,,5,5,,,,,,3,5,5,4,5,,,5,,,4,,5
+Center001,UIH_30T_umr780,Train,P010,5,,,,5,,,,,,,3,,5,5,5,,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P011,5,,,,5,5,,,,,,4,5,5,5,5,3,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P013,5,,,,4,5,,,,,,3,5,5,,5,   ,,,,,4,,
+Center001,UIH_30T_umr780,Train,P014,5,,,,5,5,,,,,,3,5,5,5,5,,,5,,,,,4
+Center001,UIH_30T_umr780,Train,P015,3,,,,3,,,,,,,  ,,5,,4,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P017,5,,,,5,5,,,,,,3,5,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P018,5,,,,5,5,,,,,,   ,5,4,,4,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P019,5,,,,5,3,,,,,,4,5,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P020,5,,,,5,4,,,,,,5,5,5,4,5,4,,5,,,5,,4
+Center001,UIH_30T_umr780,Train,P021,5,,,,5,4,,,,,,4,5,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P024,5,,,,5,5,,,,,,3,5,5,,,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P026,5,,,,5,4,,,,,,3,5,5,,,,,,,,,,
+Center001,UIH_30T_umr780,Train,P027,5,,,,5,5,,,,,,3,5,5,,4,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P028,3,,,,5,3,,,,,,   ,4,5,,4,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P029,5,,,,5,5,,,,,,   ,3,5,,,3,,4,,,5,,5
+Center001,UIH_30T_umr780,Train,P030,5,,,,5,4,,,,,,,3,5,,,,,,,,,,
+Center001,UIH_30T_umr780,Train,P031,5,,,,5,5,,,,,,5,5,5,5,5,3,,5,,,4,,5
+Center001,UIH_30T_umr780,Train,P032,5,,,,5,4,,,,,,3,5,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P033,5,,,,,,,,,,,4,5,5,5,5,,,5,,,4,,5
+Center001,UIH_30T_umr780,Train,P034,5,,,,5,5,,,,,,4,5,5,5,5,,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P035,5,,,,5,5,,,,,,   ,,5,4,,,,5,,,   ,,   
+Center001,UIH_30T_umr780,Train,P036,5,,,,5,4,,,,,,3,5,5,5,,,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P037,5,,,,5,5,,,,,,3,,5,4,,,,5,,,,,
+Center001,UIH_30T_umr780,Train,P040,3,,,,3,3,,,,,,4,3,5,,5,  ,,,,,,,
+Center001,UIH_30T_umr780,Train,P041,5,,,,4,4,,,,,,4,,5,,5,,,,,,,,
+Center001,UIH_30T_umr780,Train,P042,5,,,,,,,,,,,3,,5,5,,,,5,,,5,,4
+Center001,UIH_30T_umr780,Train,P043,5,,,,3,5,,,,,,3,5,4,4,5,,,4,,,5,,5
+Center001,UIH_30T_umr780,Train,P044,5,,,,4,3,,,,,,5,4,3,,4,,,,,,,,
+Center001,UIH_30T_umr780,Train,P046,5,,,,5,5,,,,,,3,5,5,,5,3,,,,,,,
+Center001,UIH_30T_umr780,Train,P047,  ,,,,  ,,,,,,,4,,,,,,,,,,,,
+Center001,UIH_30T_umr780,Train,P049,3,,,,3,3,,,,,,3,5,5,5,,3,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P050,5,,,,5,5,,,,,,3,5,,,,,,,,,,,
+Center001,UIH_30T_umr780,Train,P051,4,,,,5,,,,,,,   ,,5,5,5,,,5,,,   ,,3
+Center001,UIH_30T_umr780,Train,P053,5,,,,5,5,,,,,,4,5,5,5,5,,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P054,4,,,,4,4,,,,,,4,5,5,5,5,,,5,,,4,,4
+Center001,UIH_30T_umr780,Train,P055,5,,,,5,5,,,,,,4,5,5,5,5,3,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P056,,,,,5,5,,,,,,4,,5,5,,,,5,,,4,,4
+Center001,UIH_30T_umr780,Train,P057,5,,,,5,5,,,,,,5,,5,5,,,,5,,,5,,5
+Center001,UIH_30T_umr780,Train,P058,5,,,,5,5,,,,,,5,,5,5,,,,   ,,,5,,4
+Center001,UIH_30T_umr780,Train,P060,5,,,,5,5,,,,,,4,5,5,5,5,,,5,,,4,,5
+Center001,UIH_30T_umr780,Train,P061,5,,,,5,5,,,,,,3,5,5,5,5,,,4,,,5,,5
+Center002,Siemens_30T_CIMA.X,Train,P001,,4,,,,,,,,,,,,5,,4,  ,,,4,3,,,
+Center002,Siemens_30T_CIMA.X,Train,P002,,5,,,,,,,,,,,,5,,4,4,,,5,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P003,,4,,,,,,,,,,,,5,,3,  ,,,5,4,,,
+Center002,Siemens_30T_CIMA.X,Train,P005,,4,,,,,,,,,,,,4,,,,,,3,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P007,,,,,,4,,,,,,,,5,,5,,,,5,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P008,,4,,,,,,,,,,,,5,,4,,,,4,3,,,
+Center002,Siemens_30T_CIMA.X,Train,P009,,4,,,,,,,,,,,,5,,3,,,,4,4,,,
+Center002,Siemens_30T_CIMA.X,Train,P010,,4,,,,,,,,,,,,4,,3,,,,4,4,,,
+Center002,Siemens_30T_CIMA.X,Train,P012,,5,,,,,,,,,,,,4,,4,,,,4,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P014,,4,,,,,,,,,,,,,,,,,,,,,,
+Center002,Siemens_30T_CIMA.X,Train,P015,,3,,,,,,,,,,,,,,3,,,,,,,,
+Center002,Siemens_30T_CIMA.X,Train,P016,,4,,,,,,,,,,,,5,,5,,,,3,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P017,,  ,,,,,,,,,,,,5,,  ,,,,3,  ,,,
+Center002,Siemens_30T_CIMA.X,Train,P018,,5,,,,,,,,,,,,5,,5,,,,5,5,,,
+Center002,Siemens_30T_CIMA.X,Train,P019,,5,,,,,,,,,,,,5,,5,,,,4,4,,,
+Center002,Siemens_30T_CIMA.X,Train,P020,,5,,,,,,,,,,,,5,,4,,,,5,5,,,
+Center002,UIH_30T_umr880,Train,P001,5,,5,,5,5,,5,,,,   ,5,  ,,5,,,5,,,,,
+Center002,UIH_30T_umr880,Train,P002,5,,5,,5,5,,,,,,   ,5,   ,   ,5,,,,3,,5,3,4
+Center002,UIH_30T_umr880,Train,P003,5,,5,,4,,,,,,,  ,,  ,,5,,,,4,,5,5,5
+Center002,UIH_30T_umr880,Train,P005,5,,5,,,5,,,,,,  ,5,,  ,5,,,,3,,5,3,5
+Center002,UIH_30T_umr880,Train,P006,5,,5,,5,5,,,,,,  ,5,   ,   ,5,,,,5,,5,5,5
+Center002,UIH_30T_umr880,Train,P007,,,,,5,3,,,,,,  ,3,3,3,3,,,5,4,,5,5,5
+Center002,UIH_30T_umr880,Train,P008,5,,5,,5,5,,,,,,   ,5,3,,4,,,,3,,4,4,5
+Center002,UIH_30T_umr880,Train,P009,5,,5,,5,5,,,,,,   ,5,,  ,5,,,,5,,5,3,5
+Center002,UIH_30T_umr880,Train,P010,,,   ,,   ,5,,,,,,3,3,  ,  ,,,,,4,,3,3,5
+Center003,UIH_30T_umr880,Train,P002,,,4,,,5,,,,,,,,,,,,,,,,,,
+Center003,UIH_30T_umr880,Train,P004,5,,5,,4,,5,,,,4,,,   ,   ,5,,,,5,,5,,5
+Center003,UIH_30T_umr880,Train,P005,,,5,,,5,,,,,,,,,,,,,,,,,,
+Center003,UIH_30T_umr880,Train,P006,5,,5,,,,,,,,5,,,   ,   ,,,,,5,,4,,5
+Center003,UIH_30T_umr880,Train,P007,,,5,,,,,,,,,,,,,,,,,,,,,
+Center003,UIH_30T_umr880,Train,P008,5,,5,,4,,5,,,,5,,,   ,   ,5,,,,5,,5,,5
+Center003,UIH_30T_umr880,Train,P009,5,,5,,5,,5,,,,4,,,  ,  ,5,,,,4,,4,,5
+Center003,UIH_30T_umr880,Train,P010,   ,,   ,,   ,,3,,,,3,,,3,3,4,,,,4,,3,,4
+Center003,UIH_30T_umr880,Train,P011,4,,4,,3,,4,,,,3,,,   ,   ,   ,,,,   ,,4,,4
+Center003,UIH_30T_umr880,Train,P012,3,,3,,3,,3,,,,5,,,   ,   ,,,,,4,,4,,4
+Center003,UIH_30T_umr880,Train,P013,3,,3,,3,,4,,,,,,,,,,,,,,,,,
+Center003,UIH_30T_umr880,Train,P015,5,,5,,4,,5,,,,4,,,   ,   ,5,,,,4,,3,,3
+Center003,UIH_30T_umr880,Train,P017,5,,5,,4,,4,,,,5,,,   ,   ,5,,,,4,,4,,5
+Center003,UIH_30T_umr880,Train,P018,   ,,3,,3,,3,,,,4,,,   ,   ,4,,,,4,,3,,4
+Center003,UIH_30T_umr880,Train,P019,5,,5,,4,,5,,,,4,,,   ,   ,5,,,,4,,3,,4
+Center003,UIH_30T_umr880,Train,P020,5,,5,,3,,4,,,,4,,,   ,   ,5,,,,4,,4,,4
+Center003,UIH_30T_umr880,Train,P022,5,,5,,4,,4,,,,3,,,   ,   ,5,,,,5,,5,,5
+Center003,UIH_30T_umr880,Train,P023,5,,5,,5,,5,,,,5,,,   ,   ,5,,,,5,,5,,4
+Center003,UIH_30T_umr880,Train,P024,5,,5,,5,,5,,,,5,,,   ,   ,5,,,,5,,5,,5
+Center003,UIH_30T_umr880,Train,P025,5,,5,,5,,5,,,,5,,,   ,   ,5,,,,5,,5,,5
+Center005,Siemens_30T_Vida,Train,P001,5,4,,,,,,4,,,3,,,5,,4,,,,5,5,,,
+Center005,Siemens_30T_Vida,Train,P002,5,4,,,,,,4,,,3,   ,,5,,5,,,,5,4,,,
+Center005,Siemens_30T_Vida,Train,P003,5,4,,,,,,5,,,3,  ,,5,,5,,,,5,5,,,
+Center005,Siemens_30T_Vida,Train,P004,5,4,,,,,,   ,,,   ,  ,,5,,5,,,,4,3,,,
+Center005,Siemens_30T_Vida,Train,P007,5,4,,,,,,,,,   ,  ,,5,,5,,,,4,4,,,
+Center005,Siemens_30T_Vida,Train,P008,5,5,,,,,,4,,,  ,  ,,5,,5,,,,5,5,,,
+Center005,Siemens_30T_Vida,Train,P009,5,4,,,,,,4,,,  ,  ,,5,,4,,,,4,3,,,
+Center005,Siemens_30T_Vida,Train,P010,4,4,,,,,,4,,,3,,,5,,5,,,,   ,4,,,
+Center005,Siemens_30T_Vida,Train,P011,5,,,,,,,4,,,3,  ,,5,,4,,,,5,5,,,
+Center005,Siemens_30T_Vida,Train,P013,5,4,,,,,,4,,,3,  ,,5,,5,,,,5,5,,,
+Center005,Siemens_30T_Vida,Train,P014,4,,,,,,,3,,,  ,   ,,4,,4,,,,4,4,,,
+Center005,UIH_15T_umr670,Train,P001,,,4,,,5,5,,,,5,4,,4,4,5,,,4,5,,5,,5
+Center005,UIH_15T_umr670,Train,P002,,,  ,,,3,3,,,,4,4,,4,3,4,,,4,   ,,3,,3
+Center005,UIH_15T_umr670,Train,P003,,,4,,,5,5,,,,4,5,,4,3,5,,,5,5,,5,,5
+Center005,UIH_15T_umr670,Train,P004,,,4,,,,5,,,,5,5,,5,3,5,,,5,5,,5,,5
+Center005,UIH_15T_umr670,Train,P005,,,4,,,4,5,,,,4,3,,5,4,5,,,4,4,,4,,
+Center005,UIH_15T_umr670,Train,P006,,,3,,,4,5,,,,5,5,,4,3,4,,,  ,3,,,,3
+Center005,UIH_15T_umr670,Train,P007,,,5,,,5,4,,,,4,4,,5,4,5,,,5,4,,5,,5
+Center005,UIH_15T_umr670,Train,P008,,,,,,5,5,,,,5,5,,5,4,5,,,4,5,,5,,5
+Center005,UIH_15T_umr670,Train,P010,,,5,,,4,5,,,,5,5,,4,4,5,,,4,4,,4,,4
+Center005,UIH_15T_umr670,Train,P013,,,4,,,5,5,,,,5,5,,5,4,5,,,4,5,,5,,5
+Center005,UIH_15T_umr670,Train,P014,,,4,,,4,5,,,,3,3,,5,4,5,,,,4,,5,,5
+Center005,UIH_15T_umr670,Train,P015,,,4,,,,5,,,,4,5,,5,4,5,,,4,4,,3,,3
+Center005,UIH_15T_umr670,Train,P016,,,3,,,4,5,,,,4,4,,4,4,5,,,3,   ,,5,,4
+Center005,UIH_15T_umr670,Train,P017,,,5,,,5,5,,,,5,5,,5,4,5,,,5,5,,5,,5
+Center005,UIH_15T_umr670,Train,P018,,,4,,,5,5,,,,4,4,,4,4,5,,,4,5,,5,,5
+Center005,UIH_15T_umr670,Train,P019,,,4,,,5,5,,,,3,3,,4,3,5,,,4,4,,4,,5
+Center005,UIH_15T_umr670,Train,P020,,,5,,,5,5,,,,5,4,,4,3,5,,,5,5,,4,,5
+Center005,UIH_15T_umr670,Train,P021,,,3,,,4,5,,,,5,5,,5,4,5,,,5,4,,3,,5
+Center005,UIH_15T_umr670,Train,P023,,,4,,,5,4,,,,5,4,,4,3,5,,,4,4,,4,,4
+Center005,UIH_15T_umr670,Train,P024,,,5,,,5,5,,,,4,5,,5,4,5,,,4,4,,4,,4
+Center005,UIH_15T_umr670,Train,P026,,,5,,,5,5,,,,4,4,,4,4,5,,,4,3,,3,,3
+Center005,UIH_15T_umr670,Train,P027,,,5,,,5,5,,,,5,5,,5,4,5,,,4,5,,5,,5
+Center006,Siemens_30T_Prisma,Train,P001,5,5,,,,,,,,,,,,5,,5,,4,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P002,5,5,,,,,,,,4,,,,5,,5,,5,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P004,5,5,,,,,,,,,,,,5,,5,,4,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P005,3,4,,,,,,,,3,,,,5,,5,,5,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P006,4,5,,,,,,,,5,,,,5,,4,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P008,   ,4,,,,,,,,,,,,5,,4,,,,   ,,,,
+Center006,Siemens_30T_Prisma,Train,P011,5,4,,,,,,,,,,,,5,,5,,3,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P012,3,3,,,,,,,,,,,,5,,5,,3,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P013,5,5,,,,,,,,5,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P014,4,4,,,,,,,,,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P015,4,4,,,,,,,,5,,,,5,,5,,3,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P017,5,4,,,,,,,,5,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P019,5,5,,,,,,,,4,,,,5,,5,,4,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P020,5,4,,,,,,,,  ,,,,5,,5,,5,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P021,4,4,,,,,,,,,,,,5,,5,,   ,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P022,4,4,,,,,,,4,,,,,5,,5,,4,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P024,5,4,,,,,,,,4,,,,5,,5,,5,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P025,5,4,,,,,,,,,,,,5,,5,,4,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P026,5,5,,,,,,,,5,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P027,5,5,,,,,,,,4,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P028,5,5,,,,,,,4,   ,,,,5,,5,,3,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P029,  ,4,,,,,,,,5,,,,5,,5,,3,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P030,4,4,,,,,,,,  ,,,,5,,3,,5,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P031,4,5,,,,,,,5,5,,,,5,,5,,4,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P032,3,4,,,,,,,,5,,,,5,,5,,5,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P033,5,5,,,,,,,,3,,,,5,,5,,4,,   ,,,,
+Center006,Siemens_30T_Prisma,Train,P034,4,5,,,,,,,,5,,,,5,,4,,5,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P035,4,5,,,,,,,,,,,,5,,5,,5,,5,,,,
+Center006,Siemens_30T_Prisma,Train,P036,4,4,,,,,,,,,,,,5,,5,,  ,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P037,5,5,,,,,,,4,,,,,5,,5,,,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P038,5,   ,,,,,,,,,,,,4,,4,,,,   ,,,,
+Center006,Siemens_30T_Prisma,Train,P039,5,5,,,,,,,,,,,,5,,5,,5,,3,,,,
+Center006,Siemens_30T_Prisma,Train,P040,4,5,,,,,,,4,,,,,,,,,4,,4,,,,
+Center006,Siemens_30T_Prisma,Train,P042,3,4,,,,,,,,,,,,5,,4,,,,3,,,,
+Center006,UIH_30T_umr790,Train,P001,5,,5,3,4,5,,,5,,,,,,,,,,,4,,4,3,5
+Center006,UIH_30T_umr790,Train,P002,5,,5,4,5,5,,,4,,,,,,,,,,,,,5,5,5
+Center006,UIH_30T_umr790,Train,P003,4,,4,3,3,5,,,5,,,,,,,,,,,   ,,4,   ,5
+Center006,UIH_30T_umr790,Train,P004,5,,5,  ,5,5,,,5,,,,,   ,,5,,,,,,,,
+Center006,UIH_30T_umr790,Train,P006,4,,5,5,4,4,,,4,,,,,   ,,4,,,,,,,,
+Center006,UIH_30T_umr790,Train,P007,4,,5,  ,4,5,,,5,,,,,4,,5,,,,,,,,
+Center006,UIH_30T_umr790,Train,P009,   ,,3,  ,   ,3,,,3,,,,,5,,4,,,,,,,,
+Center006,UIH_30T_umr790,Train,P010,5,,5,,5,4,,,,,,,,4,,5,,,,,,,,
+Center006,UIH_30T_umr790,Train,P011,5,,5,,5,5,,,,,,,,4,,5,,,,,,,,
+Center007,Siemens_15T_Avanto,Train,P001,5,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Avanto,Train,P002,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Avanto,Train,P003,5,,,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P001,4,,4,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P002,5,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P003,5,,,,,4,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P004,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P005,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P006,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P007,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P008,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P009,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P010,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P011,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P012,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P013,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P014,  ,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P015,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P016,,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P017,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P018,,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P019,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P020,,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P021,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P025,,,4,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P026,,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_15T_Sola,Train,P027,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P001,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P002,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P003,5,   ,,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P004,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P005,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P006,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P007,4,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P008,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P009,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P010,5,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P011,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P012,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P013,5,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P014,5,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P015,5,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P016,5,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P017,,,,,,4,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P018,,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Prisma,Train,P019,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Vida,Train,P001,,,,,5,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Vida,Train,P002,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Vida,Train,P003,,,,,,5,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Vida,Train,P004,,,5,,,,,,,,,,,,,,,,,,,,,
+Center007,Siemens_30T_Vida,Train,P005,,,5,,,,,,,,,,,,,,,,,,,,,

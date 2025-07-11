@@ -16,11 +16,12 @@ trainer:
     -
       class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
-        monitor: validation_loss
+        monitor: val_loss
         mode: min 
-        save_top_k: 0 # -1 to save all checkpoints, 5 to save the top 5 checkpoints
+        save_top_k: -1 # -1 to save all checkpoints, 5 to save the top 5 checkpoints
         save_last: true # always save the last checkpoint
         verbose: true # print checkpoint information
+        save_on_train_epoch_end: null
     # - 
     #   class_path: lightning.pytorch.callbacks.LearningRateMonitor
     #   init_args:
@@ -29,6 +30,5 @@ trainer:
     #     log_weight_decay: true
 
 model:
-  class_path: pl_modules.PromptMrModule
-  init_args:
-    num_log_images: 16 # number of images to log in validation step
+  class_path: pl_modules.PromptDDPMModule
+  init_args: {}
