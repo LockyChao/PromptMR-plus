@@ -171,7 +171,23 @@ def save_reconstructions(reconstruction_4d, fname, out_dir):
         # Save the tensor as a numpy array
         hf.create_dataset("reconstruction", data=reconstruction_4d.cpu().numpy())
 
+def save_cascades(cascades, fname, out_dir):
+    """
+    Saves a 5D cascades from a model to an h5 file.
 
+    Args:
+        cascades (torch.Tensor): A 5D tensor with shape [cascades, time, slices, height, width].
+        fname (str): The original filename, used to create the output filename.
+        out_dir (pathlib.Path): Path to the output directory.
+    
+    """
+    
+    out_fname = out_dir / fname
+    out_fname.parent.mkdir(parents=True, exist_ok=True)
+    with h5py.File(out_fname, "w") as hf:
+        # Save the tensor as a numpy array
+        hf.create_dataset("cascades", data=cascades.cpu().numpy())
+        
 def loadmat_group(group):
     """
     Load a group in Matlab v7.3 format .mat file using h5py.

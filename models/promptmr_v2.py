@@ -370,7 +370,7 @@ class PromptMR(nn.Module):
         history_feat = None
         
      
-        im_pred_stacked = [] # left empty if save_itr is False
+        im_pred_cascades = [] # left empty if save_itr is False
 
         for cascade in self.cascades:
             if use_checkpoint:  # and self.training:
@@ -378,6 +378,16 @@ class PromptMR(nn.Module):
                     cascade, img_pred, img_zf, latent, mask, sens_maps, history_feat, use_reentrant=False)
             else:
                 img_pred, latent, history_feat = cascade(img_pred, img_zf, latent, mask, sens_maps, history_feat)
+                
+                if save_itr:
+                    img_pred_temp = img_pred.clone()
+                    img_pred_temp = torch.chunk(img_pred_temp, self.num_adj_slices, dim=1)[self.center_slice]
+                    sens_maps_temp = sens_maps.clone()
+                    sens_maps_temp = torch.chunk(sens_maps_temp, self.num_adj_slices, dim=1)[self.center_slice]
+                    
+                    img_pred_temp = rss(complex_abs(complex_mul(img_pred_temp, sens_maps_temp)), dim=1)
+                    im_pred_cascades.append(img_pred_temp)
+                    
 
             
 
@@ -385,9 +395,6 @@ class PromptMR(nn.Module):
         img_pred = torch.chunk(img_pred, self.num_adj_slices, dim=1)[self.center_slice]
         sens_maps = torch.chunk(sens_maps, self.num_adj_slices, dim=1)[self.center_slice]
         img_pred = rss(complex_abs(complex_mul(img_pred, sens_maps)), dim=1)
-        
-        if save_itr:
-            im_pred_stacked.append(img_pred.clone())
             
         # prepare for additional output
         img_zf = torch.chunk(masked_kspace, self.num_adj_slices, dim=1)[self.center_slice]
@@ -398,7 +405,7 @@ class PromptMR(nn.Module):
             'img_pred': img_pred,
             'img_zf': img_zf,
             'sens_maps': sens_maps,
-            'im_pred_stacked': im_pred_stacked
+            'im_pred_cascades': im_pred_cascades
         }
 
 

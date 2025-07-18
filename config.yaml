@@ -10,7 +10,7 @@ trainer:
   callbacks:
   - class_path: __main__.CustomWriter
     init_args:
-      output_dir: /common/lidxxlab/chushu/PromptMR-plus/output_chushu/Inference_test
+      output_dir: /common/lidxxlab/Junzhou/pmr_plus_inference_test
       write_interval: batch_and_epoch
   fast_dev_run: false
   max_epochs: null
@@ -101,6 +101,7 @@ model:
     lr_gamma: 0.1
     weight_decay: 0.01
     use_checkpoint: false
+    save_itr: true
     compute_sens_per_coil: false
     pretrain: false
     pretrain_weights_path: null
@@ -109,7 +110,7 @@ data:
   class_path: pl_modules.InferenceDataModule
   init_args:
     slice_dataset: data.CmrxReconInferenceSliceDataset
-    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task2/TaskR2/MultiCoil
+    data_path: /common/lidxxlab/Junzhou/data/CMR2025/Validation/Task2/TaskR2/MultiCoil
     test_transform:
       class_path: data.CmrxReconDataTransform
       init_args:

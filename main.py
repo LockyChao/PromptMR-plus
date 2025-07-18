@@ -14,7 +14,7 @@ import numpy as np
 from lightning.pytorch.cli import LightningCLI, SaveConfigCallback
 from lightning.pytorch.callbacks import BasePredictionWriter
 
-from mri_utils import save_reconstructions
+from mri_utils import save_reconstructions, save_cascades
 from pl_modules import PromptMrModule
 
 
@@ -245,10 +245,13 @@ class CustomWriter(BasePredictionWriter):
             # This correctly flattens the list of lists from all GPUs
             predictions = [item for sublist in gathered for item in sublist]
         else:
-            predictions = predictions[0]
+            # In non-distributed case, predictions might already be a list of batches
+            predictions = predictions if isinstance(predictions, list) else [predictions]
 
         # --- Grouping logic from your code, slightly modified ---
         outputs = defaultdict(list)
+        
+        save_itr = pl_module.save_itr
 
         for batch_output in predictions:
             # Loop through items in the batch (handles batch_size > 1)
@@ -259,12 +262,21 @@ class CustomWriter(BasePredictionWriter):
                     fname = fname[0]
                 
                 # Store the entire dictionary for this slice
-                outputs[fname].append({
-                    "slice_num": batch_output["slice_num"][i],
-                    "time_frame": batch_output["time_frame"][i],
-                    "num_slc": batch_output["num_slc"][i],
-                    "output": batch_output["output"][i]
-                })
+                if save_itr:
+                    outputs[fname].append({
+                        "slice_num": batch_output["slice_num"][i],
+                        "time_frame": batch_output["time_frame"][i],
+                        "num_slc": batch_output["num_slc"][i],
+                        "output": batch_output["output"][i],
+                        "im_pred_cascades": batch_output["im_pred_cascades"][i]
+                    })
+                else:
+                    outputs[fname].append({
+                        "slice_num": batch_output["slice_num"][i],
+                        "time_frame": batch_output["time_frame"][i],
+                        "num_slc": batch_output["num_slc"][i],
+                        "output": batch_output["output"][i]
+                    })
                 
         # Directory for saving the final volumes
         save_dir = self.output_dir / "reconstructions"
@@ -285,6 +297,10 @@ class CustomWriter(BasePredictionWriter):
 
                 # b. Stack all sorted slices into one tensor
                 stacked_volume = torch.stack([s['output'].squeeze() for s in sorted_slices])
+                
+                if save_itr:
+                    stacked_cascades = torch.stack([s['im_pred_cascades'].squeeze() for s in sorted_slices], dim=1)
+                    num_cascades = stacked_cascades.shape[0]
 
                 # c. Get the correct number of slices for THIS file from its own data
                 num_slices_per_time = sorted_slices[0]['num_slc'].item()
@@ -299,10 +315,22 @@ class CustomWriter(BasePredictionWriter):
                 
                 # e. Reshape into the final 4D volume using the CORRECT dimensions
                 final_4d_volume = stacked_volume.view(num_time_frames, num_slices_per_time, h, w)
+                
+                if save_itr:
+                    stacked_cascades = stacked_cascades.view(num_cascades, num_time_frames, num_slices_per_time, h, w)
 
                 print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
                 # The save function is now much simpler
                 save_reconstructions(final_4d_volume, fname, save_dir)
+                
+                if save_itr:
+                    #strip extension name from fname
+                    extension = os.path.splitext(fname)[1]
+                    fname_no_ext = os.path.splitext(fname)[0]
+                    
+                    fname_cascades = fname_no_ext + "_cascades" + extension
+                    print(f"Saving {num_cascades} cascades for {fname_cascades} with shape {stacked_cascades.shape}")
+                    save_cascades(stacked_cascades, fname_cascades, save_dir)
 
             except Exception as e:
                 print(f"CRITICAL ERROR while processing/saving {fname}. Error: {e}")
@@ -313,12 +341,20 @@ class CustomLightningCLI(LightningCLI):
 
     def instantiate_classes(self):
         super().instantiate_classes()
+        
+        # save_itr from yaml file is set in the first intsantiacia_classes()
+        save_itr = self.model.save_itr
+        
         if self.config_init.subcommand == 'predict':
              # Get the checkpoint path from the configuration
             ckpt_path_to_load = self.config_init.predict.ckpt_path
             # Add this line to print the path to your console
             print(f"\n✅ LOADING CHECKPOINT FROM: {ckpt_path_to_load}\n")
             self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
+            
+            # Override save_itr with the value from config, which is set in the first intsantiacia_classes()
+            self.model.save_itr = save_itr
+            
 
 
 def run_cli():
