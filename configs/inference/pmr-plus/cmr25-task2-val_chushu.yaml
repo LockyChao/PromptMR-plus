@@ -55,6 +55,7 @@ model:
   init_args:
     pretrain: false
     pretrain_weights_path: null
+    save_itr: false  # Save Each Cascade
 
 ckpt_path: /common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt
 

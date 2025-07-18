@@ -52,6 +52,7 @@ class PromptMrModule(MriModule):
         lr_gamma: float = 0.1,
         weight_decay: float = 0.01,
         use_checkpoint: bool = False,
+        save_itr: bool = False,
         compute_sens_per_coil: bool = False,
         pretrain: bool = False,
         pretrain_weights_path: str = None,
@@ -189,8 +190,8 @@ class PromptMrModule(MriModule):
         )
         return [optim], [scheduler]
     
-    def forward(self, masked_kspace, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False):
-        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil)   
+    def forward(self, masked_kspace, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False, save_itr=False):
+        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil, save_itr=save_itr)   
 
     def training_step(self, batch, batch_idx):
         output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
