@@ -239,7 +239,7 @@ class PromptMrModule(MriModule):
         }
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
+        output_dict = self(batch.masked_kspace.float(), batch.mask, batch.num_low_frequencies, batch.mask_type,
                            compute_sens_per_coil=self.compute_sens_per_coil)
         output = output_dict['img_pred']
 
@@ -255,6 +255,8 @@ class PromptMrModule(MriModule):
             'output': output.cpu(), 
             'slice_num': batch.slice_num, 
             'fname': batch.fname,
-            'num_slc':  num_slc
+            'num_slc':  num_slc,
+            'batch_idx': batch_idx,
+            'time_frame': batch.num_t
         }
         
