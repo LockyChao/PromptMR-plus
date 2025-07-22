@@ -123,7 +123,7 @@ data:
     test_filter:
       class_path: data.FuncFilterString
       init_args:
-        filter_str: Mapping/ValidationSet/UnderSample_TaskR2
+        filter_str: T1w/ValidationSet/UnderSample_TaskR2
         logic: or
     batch_size: 1
     num_workers: 4
