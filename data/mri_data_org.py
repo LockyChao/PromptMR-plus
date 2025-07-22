@@ -1,7 +1,7 @@
 """
 Dataset classes for fastMRI, Calgary-Campinas, CMRxRecon datasets
 """
-#copied from Yi's folder!!!
+#orginal version from github
 import logging
 import os
 import pickle
@@ -31,34 +31,6 @@ from scipy.linalg import sqrtm, inv
 #########################################################################################################
 # Common functions
 #########################################################################################################
-
-from pathlib import Path
-# ---------- helper for the "fardad" dataset ---------- #
-def _is_fardad_path(path: str) -> bool:
-    """Return True if 'fardad' appears anywhere in the path (case-insensitive)."""
-    return "fardad" in str(path).lower()
-
-def _collect_fardad_files(root: str,
-                        #   valid_ext: tuple[str, ...] = (".mat", ".h5")) -> list[str]:
-                        valid_ext: Tuple[str, ...] = (".mat", ".h5")) -> List[str]:
-    """
-    Recursively walk through `root` and return all files whose extension is in `valid_ext`.
-
-    Parameters
-    ----------
-    root : str
-        Patient-level directory or any directory that contains dataset files.
-    valid_ext : tuple[str, ...]
-        File extensions to accept (lower-case).
-    """
-    file_list: list[str] = []
-    for dirpath, _, filenames in os.walk(root):
-        for fname in filenames:
-            if fname.lower().endswith(valid_ext):
-                file_list.append(os.path.join(dirpath, fname))
-    return sorted(file_list)
-# ----------------------------------------------------- #
-
 
 def prewhiten_kspace_5d(kspaceData, is_cartesian=True, edge_fraction=0.25):
     """
@@ -139,7 +111,7 @@ def prewhiten_kspace_5d(kspaceData, is_cartesian=True, edge_fraction=0.25):
     counter = 0
     for i in range(ny):
         for j in range(nz):
-            if noise_mask[i, j] and data_perm[i, -1, j, :, -1] != 0:
+            if noise_mask[i, j] and data_perm[i, -1, j, :, -1] is not 0:
                 # data_perm[i, -1, j, :, -1] has shape (nc,)
                 noise_samples_list.append(data_perm[i, -1, j, :, -1])
                 counter += 1
@@ -666,18 +638,12 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
     ):
         self.root = root
         # get all the kspace mat files from root, under folder or its subfolders
-        #print('root:',self.root)
-        #volume_paths = root.glob('**/*.mat')
-        all_paths = root.glob('**/*.mat')
-        volume_paths = [p for p in all_paths if not p.name.startswith('._')]
-        #print('volume_paths:',volume_paths)
+        volume_paths = root.glob('**/*.mat')
 
         if '2023' in str(self.root):
             self.year = 2023 
         elif '2024' in str(self.root):
             self.year = 2024
-        elif '2025' in str(self.root):
-            self.year = 2025
         else:
             raise ValueError('Invalid dataset root')
         #
@@ -686,9 +652,6 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             self.volume_paths = [str(path) for path in volume_paths if '_mask.mat' not in str(path)]
             
         elif self.year == 2024:
-            self.volume_paths = [str(path) for path in volume_paths if '_mask_' not in str(path)]
-
-        elif self.year == 2025:
             self.volume_paths = [str(path) for path in volume_paths if '_mask_' not in str(path)]
         
         self.volume_paths = [pp for pp in self.volume_paths if raw_sample_filter(pp)]
@@ -702,11 +665,10 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         self.num_adj_slices = num_adj_slices
         self.start_adj = -(num_adj_slices // 2)
         self.end_adj = num_adj_slices // 2 + 1
-
-        
         self.volume_shape_dict = self._get_volume_shape_info()
+        # add the fisrt element in each dict
         self.len_dataset = sum([v[0]*v[1] for v in self.volume_shape_dict.values()])
-
+        
         
         self.current_volume = None
         self.current_file_index = -1
@@ -743,19 +705,8 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         
     def _get_volume_shape_info(self):
         shape_dict = {} #defaultdict(dict)
-        print("\n--- Scanning files to get shapes ---")
         for path in self.volume_paths:
-            print(f"Attempting to open: {path}") # Add this debug line
-            #shape_dict[path]=load_shape(path)
-            current_shape=load_shape(path)
-            if len(current_shape)==4:
-                #new_shape=np.stack([current_shape,current_shape])
-                new_shape=(2,) + current_shape
-                shape_dict[path] = new_shape
-                print('shape has been duplicated:',new_shape)
-            else:
-                shape_dict[path] = current_shape
-        print("--- Finished scanning all files ---")
+            shape_dict[path]=load_shape(path)
         return shape_dict
  
     def _get_ti_adj_idx_list(self, ti, num_t_in_volume):
@@ -774,75 +725,24 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
     def _load_volume(self, path):
         """
         Load the k-space volume and mask for the given path.
+        Modify this function based on your `load_kdata` and `load_mask` functions.
         """
         kspace_volume = load_kdata(path)
-
-        if len(kspace_volume.shape) == 3:
-            # (Z, H, W) → (1, 1, Z, H, W)
-            kspace_volume = kspace_volume[None, None, :, :, :]
-        elif len(kspace_volume.shape) == 4:
-            # (C, Z, H, W) → (C, 1, Z, H, W)
-            #kspace_volume = kspace_volume[:, None, :, :, :]
-            # ── Duplicate the fake time dimension to size 2 (maybe)──
-            kspace_volume = np.stack([kspace_volume,kspace_volume])  # modified by chushu
-            print('deplicated kspace:',kspace_volume.shape)
-            # Shape is now (C, 1, Z, H, W) → repeat along axis=1
-            # kspace_volume = np.repeat(kspace_volume, repeats=2, axis=1)
-        elif len(kspace_volume.shape) == 5:
-            pass  # already correct
-        else:
-            raise RuntimeError(f"[ERROR] Unsupported kspace shape: {kspace_volume.shape}")
-
+        kspace_volume = kspace_volume[None] if len(kspace_volume.shape) != 5 else kspace_volume # blackblood has no time dimension
         kspace_volume = kspace_volume.transpose(0, 1, 2, 4, 3)
-        # kspace_volume = kspace_volume.astype(np.float32)  # Convert to float32
         
-        # Handle mask based on year
-        if self.year == 2023:
+        if self.year==2023:
             mask_path = path.replace('.mat', '_mask.mat')
             mask = load_mask(mask_path).T[0:1]
-            mask = mask[None,:,:,None]
-        elif self.year == 2024:
+            mask=mask[None,:,:,None]
+        elif self.year==2024:
             mask_path = path.replace('UnderSample_Task', 'Mask_Task').replace('_kus_', '_mask_')
             if 'UnderSample_Task1' in path:
                 mask = load_mask(mask_path).T[0:1]
-                mask = mask[None,:,:,None]
+                mask=mask[None,:,:,None]
             else:
                 mask = load_mask(mask_path).transpose(0,2,1)
-                mask = mask[:,:,:,None]
-        elif self.year == 2025:
-            mask_path = path.replace('UnderSample_Task', 'Mask_Task').replace('_kus_', '_mask_')
-            org_mask = load_mask(mask_path)
-            print('orginal mask shape:',org_mask.shape)
-            if len(org_mask.shape)==2: #duplicate mask for T1w/T2w
-                mask_new=np.stack([org_mask,org_mask])
-                mask= mask_new.transpose(0,2,1) # [2,514,201]
-                mask = mask[:,:,:,None] #[2,514,201,1]
-                print('duplicate mask:',mask.shape)
-            else: # for contrast with Nt
-                mask = load_mask(mask_path).transpose(0,2,1) 
-                mask = mask[:,:,:,None] #[2,514,201,1]
-
-            #modified by chushu0716 T1w/T2w has been duplicated by 2 in time dimension
-            # if 'Perfusion' in path:
-            #     mask = load_mask(mask_path).transpose(0,2,1)
-            #     mask = mask[:,:,:,None]
-            # elif 'Cine' in path:
-            #     mask = load_mask(mask_path).transpose(0,2,1)
-            #     mask = mask[:,:,:,None]
-            # elif 'Mapping' in path:
-            #     mask = load_mask(mask_path).transpose(0,2,1)
-            #     mask = mask[:,:,:,None]
-            # elif 'LGE' in path:
-            #     mask = load_mask(mask_path).transpose(0,2,1)
-            #     mask = mask[:,:,:,None]
-            # else:    
-            #     mask = load_mask(mask_path).T[0:1]
-            #     mask = mask[None,:,:,None]
-
-        # mask = mask.astype(np.float32)  # Convert mask to float32
-
-        print('debug mask: ', mask.shape, kspace_volume.shape)
-        print(mask_path)
+                mask=mask[:,:,:,None]
 
         attrs = {
             'encoding_size': [kspace_volume.shape[3], kspace_volume.shape[4], 1],
@@ -888,27 +788,15 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         nc = self.current_volume.shape[2]
         kspace = [self.current_volume[idx, zi] for idx in ti_idx_list]
         kspace = np.concatenate(kspace, axis=0)
-
-        print('kspace shape:',kspace.shape)
         
         _path = self.current_path.replace(str(self.root)+'/', '')
         # gather mask data for adjacent slices
         if self.year==2023 or (self.year==2024 and 'UnderSample_Task1' in _path): 
             mask = self.mask
-        else: #check the reason for this??
-            print('mask length 2025:',len(self.mask))
-            print('max ti:',max(ti_idx_list)+1)
-            if len(self.mask) == 1:
-                mask = [self.mask[0] for _ in ti_idx_list]
-            elif len(self.mask) >= max(ti_idx_list) + 1:
-                mask = [self.mask[idx] for idx in ti_idx_list]
-            else:
-                raise ValueError(f"Mask length {len(self.mask)} is too small for requested frame indices {ti_idx_list}.")
-
+        else:
+            mask = [self.mask[idx] for idx in ti_idx_list]
             mask = np.stack(mask, axis=0)
             mask = mask.repeat(nc, axis=0)
-
-            print('mask shape:',mask.shape)
 
         # Prepare the sample
         if self.transform is None:
