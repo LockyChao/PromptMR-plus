@@ -52,6 +52,7 @@ class PromptMrModule(MriModule):
         lr_gamma: float = 0.1,
         weight_decay: float = 0.01,
         use_checkpoint: bool = False,
+        save_itr: bool = False,
         compute_sens_per_coil: bool = False,
         pretrain: bool = False,
         pretrain_weights_path: str = None,
@@ -122,6 +123,7 @@ class PromptMrModule(MriModule):
         self.use_sens_adj = use_sens_adj
         # two flags for reducing memory usage
         self.use_checkpoint = use_checkpoint
+        self.save_itr = save_itr
         self.compute_sens_per_coil = compute_sens_per_coil
         
         self.pretrain = pretrain
@@ -158,7 +160,7 @@ class PromptMrModule(MriModule):
             use_sens_adj = self.use_sens_adj,
         )
         
-        self._load_pretrain_weights()
+        # self._load_pretrain_weights()
         self.loss = SSIMLoss()
         
     def _load_pretrain_weights(self):
@@ -190,7 +192,7 @@ class PromptMrModule(MriModule):
         return [optim], [scheduler]
     
     def forward(self, masked_kspace, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False):
-        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil)   
+        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil, save_itr=self.save_itr)   
 
     def training_step(self, batch, batch_idx):
         output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
@@ -239,9 +241,15 @@ class PromptMrModule(MriModule):
         }
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
+        output_dict = self(batch.masked_kspace.float(), batch.mask, batch.num_low_frequencies, batch.mask_type,
                            compute_sens_per_coil=self.compute_sens_per_coil)
         output = output_dict['img_pred']
+        
+        if self.save_itr:
+            im_pred_cascades_list = output_dict['im_pred_cascades']
+            im_pred_cascades = torch.stack(im_pred_cascades_list, dim=1)
+            
+            
 
         crop_size = batch.crop_size 
         crop_size = [crop_size[0][0], crop_size[1][0]] # if batch_size>1
@@ -251,10 +259,25 @@ class PromptMrModule(MriModule):
         output = transforms.center_crop(output, crop_size)
 
         num_slc = batch.num_slc
-        return {
-            'output': output.cpu(), 
-            'slice_num': batch.slice_num, 
-            'fname': batch.fname,
-            'num_slc':  num_slc
-        }
+        
+        if self.save_itr:
+            return {
+                'output': output.cpu(), 
+                'slice_num': batch.slice_num, 
+                'fname': batch.fname,
+                'num_slc':  num_slc,
+                'batch_idx': batch_idx,
+                'time_frame': batch.num_t,
+                'im_pred_cascades': im_pred_cascades.cpu()
+            }
+        else:
+            return {
+                'output': output.cpu(), 
+                'slice_num': batch.slice_num, 
+                'fname': batch.fname,
+                'num_slc':  num_slc,
+                'batch_idx': batch_idx,
+                'time_frame': batch.num_t
+            }
+        
         

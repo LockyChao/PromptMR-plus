@@ -344,6 +344,7 @@ class PromptMR(nn.Module):
         num_low_frequencies: torch.Tensor,
         mask_type: Tuple[str] = ("cartesian",),
         use_checkpoint: bool = False,
+        save_itr: bool = False,
         compute_sens_per_coil: bool = False, # can further reduce the memory usage
     ) -> torch.Tensor:
         '''
@@ -367,6 +368,9 @@ class PromptMR(nn.Module):
         img_pred = img_zf.clone()
         latent = img_zf.clone()
         history_feat = None
+        
+     
+        im_pred_cascades = [] # left empty if save_itr is False
 
         for cascade in self.cascades:
             if use_checkpoint:  # and self.training:
@@ -374,6 +378,18 @@ class PromptMR(nn.Module):
                     cascade, img_pred, img_zf, latent, mask, sens_maps, history_feat, use_reentrant=False)
             else:
                 img_pred, latent, history_feat = cascade(img_pred, img_zf, latent, mask, sens_maps, history_feat)
+                
+                if save_itr:
+                    img_pred_temp = img_pred.clone()
+                    img_pred_temp = torch.chunk(img_pred_temp, self.num_adj_slices, dim=1)[self.center_slice]
+                    sens_maps_temp = sens_maps.clone()
+                    sens_maps_temp = torch.chunk(sens_maps_temp, self.num_adj_slices, dim=1)[self.center_slice]
+                    
+                    img_pred_temp = rss(complex_abs(complex_mul(img_pred_temp, sens_maps_temp)), dim=1)
+                    im_pred_cascades.append(img_pred_temp)
+                    
+
+            
 
         # get central slice of rss as final output
         img_pred = torch.chunk(img_pred, self.num_adj_slices, dim=1)[self.center_slice]
@@ -388,7 +404,8 @@ class PromptMR(nn.Module):
         return {
             'img_pred': img_pred,
             'img_zf': img_zf,
-            'sens_maps': sens_maps
+            'sens_maps': sens_maps,
+            'im_pred_cascades': im_pred_cascades
         }
 
 
