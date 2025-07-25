@@ -84,5 +84,7 @@ def get_config():
     model.resamp_with_conv = True
     model.conditional = True
     model.learnable_prompt = False
+    model.pretrain = True
+    model.pretrain_weights_path = "//common/lidxxlab/Yifan/PromptMR-plus/experiments/cmr25_ddpm/promptmr-ddpm/CMR2025_contd_auto_addmeta/deep_recon/cz6v6vwx/checkpoints/last.ckpt"
 
     return config

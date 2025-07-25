@@ -235,7 +235,8 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         num_low_frequencies: int = 16,
         num_adj_slices: int = 5,
         pad_H: int = 560,
-        pad_W: int = 336
+        pad_W: int = 336,
+        get_kspace: bool = False
     ):
         """
         Args:
@@ -288,6 +289,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
         self.dataset_cache_file = Path(dataset_cache_file)
 
         self.transform = transform
+        self.get_kspace = get_kspace
 
         assert num_adj_slices % 2 == 1, "Number of adjacent slices must be odd in SliceDataset"
         # max temporal slice number is 12
@@ -325,9 +327,9 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             files = list(Path(root).iterdir())
 
             for fname in sorted(files):
-                print(fname, flush=True)
-                if (str(fname) == '/common/lidxxlab/cmrchallenge/data/CMR2025/Processed/train/Center002_Siemens_30T_CIMA.X_P016_T1map.h5'):
-                    print(1, flush=True)
+                #print(fname, flush=True)
+                if (str(fname) == '/common/lidxxlab/Yifan/PromptMR-plus/CMR2025/Processed_addmeta/train/Center002_Siemens_30T_CIMA.X_P016_T1map.h5'):
+                    #print(1, flush=True)
                     continue  # skip this file, it is not a valid CMRxRecon file
                 with h5py.File(fname, 'r') as hf:                  
                     num_slices = hf["kspace"].shape[0]*hf["kspace"].shape[1]
@@ -487,6 +489,11 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             #print(H, W, flush=True)
             #find sense(TODO)
             #sens_volume = hf["sens"]
+            metadata = hf["meta"] if "meta" in hf else None
+            #if NaN or None in metadata, set to 0. metadata is a np array
+            if metadata is not None:
+                metadata = np.nan_to_num(metadata, nan=0.0, posinf=0.0, neginf=0.0)
+
             attrs = dict(hf.attrs)
             attrs.update({'H': H, 'W': W})  # store spatial dims for downstream use
             num_t = attrs['shape'][0]
@@ -533,6 +540,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             #print("sample masked", flush=True)
             
         masked_kspace = sample[0]
+        mask = sample[2]
         #masked_kspace = masked_kspace[None, ...]
         #also expand sens to (1, Nc, H, W, 2)
         if sens is not None:
@@ -562,15 +570,36 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             input_mean = input_img.mean()
             input_std = input_img.std()
             input_img = (input_img - input_mean) / (input_std + 1e-5)
+            #clamp input_img
+            input_img = np.clip(input_img, -5, 5)
 
             # Store means and stds for possible denormalization
             attrs["input_mean"] = float(input_mean)
             attrs["input_std"] = float(input_std)
             attrs["target_mean"] = float(target_mean)
             attrs["target_std"] = float(target_std)
-        # ---------------------------------------------------------------------------
+            
+            #add 0s to metadata to ensure the same length is 16
+            #metadata is a numpy array
+            #print(metadata, flush=True)
+            if metadata is not None:
+                metadata = np.pad(metadata, (0, 16 - len(metadata)), mode='constant', constant_values=0)
+            else:
+                metadata = np.zeros(16, dtype=np.float32)
+            
+            #add input_mean and input_std to metadata
+            metadata = np.append(metadata, [input_mean, input_std])
 
-        sample = (input_img, target, attrs, fname.name, data_slice, num_t, num_slices)
+        #print(metadata, flush=True)
+        # ---------------------------------------------------------------------------
+        #print masked_kspace, sens, mask for debugging
+        #print('kspace shape:', masked_kspace.shape, 'sens shape:', sens.shape, 'mask shape:', mask.shape, 'target shape:', target.shape, flush=True)
+        
+        if self.get_kspace:
+            # kspace is already in the sample
+            sample = (input_img, target, metadata, masked_kspace, sens, mask, attrs, fname.name, data_slice, num_t, num_slices)
+        else:
+            sample = (input_img, target, metadata, attrs, fname.name, data_slice, num_t, num_slices)
 
         #other output options:
         #kspace: original kspace, size[adj_slice, Nc, H, W, 2]

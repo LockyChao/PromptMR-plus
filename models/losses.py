@@ -184,41 +184,57 @@ def get_ddpm_loss_fn(vpsde, train, reduce_mean=True):
         else lambda *args, **kwargs: 0.5 * torch.sum(*args, **kwargs)
     )
 
-    def loss_fn(model, batch, cond):
+    def loss_fn(model, batch, cond, metadata):
+        """
+        v-prediction DDPM loss.
+
+        Predict:
+            v = sqrt(alpha_bar_t) * eps - sqrt(1 - alpha_bar_t) * x0
+
+        Returns:
+            loss: scalar tensor
+            pred_v: (B,1,H,W) predicted v
+            perturbed_data: x_t (possibly concatenated with cond) fed to the model
+        """
+        import torch.nn.functional as F
+
         model_fn = mutils.get_model_fn(model, train=train)
+
+        # Sample discrete timestep labels
         labels = torch.randint(0, vpsde.N, (batch.shape[0],), device=batch.device)
-        print(f"[DDPM loss] Labels min: {labels.min().item()}, max: {labels.max().item()}", flush=True)
-        #print(f"[DDPM loss] Batch shape: {batch.shape}", flush=True)
-        #print(f"[DDPM loss] Labels shape: {labels.shape}", flush=True)
+
+        # Prepare noise and expand dimensions to channel=1
         noise = torch.randn_like(batch)
-        batch = batch[:, None, ...]
-        print(f"[DDPM loss] Batch mean: {batch.mean().item():.4f}, std: {batch.std().item():.4f}", flush=True)
-        noise = noise[:, None, ...]
-        
-        print(f"[DDPM loss] Noise shape: {noise.shape}", flush=True)
+        batch = batch[:, None, ...]   # x0 -> (B,1,H,W)
+        noise = noise[:, None, ...]   # eps -> (B,1,H,W)
+
+        # Precompute schedule terms
         sqrt_alphas_cumprod = vpsde.sqrt_alphas_cumprod.to(batch.device)
         sqrt_1m_alphas_cumprod = vpsde.sqrt_1m_alphas_cumprod.to(batch.device)
-        perturbed_data = (
-            sqrt_alphas_cumprod[labels, None, None, None] * batch
-            + sqrt_1m_alphas_cumprod[labels, None, None, None] * noise
-        )
-        cond = cond[:, None, ...] if cond is not None else None
-        if cond is not None:
-            print(f"[DDPM loss] Cond - Batch mean abs diff: {(cond - batch).abs().mean().item():.4f}", flush=True)
-            perturbed_data = torch.cat([perturbed_data, cond], dim=1)
-            #print(f"[DDPM loss] Perturbed data with condition shape: {perturbed_data.shape}", flush=True)
 
-        print(f"[DDPM loss] Perturbed data shape: {perturbed_data.shape}", flush=True)
-        score = model_fn(perturbed_data, labels)
-        print(f"[DDPM loss] Score mean: {score.mean().item():.4f}, std: {score.std().item():.4f}", flush=True)
-        score = score[:, 0:1, ...]  # Keep only the first channel for DDPM
-        
-        print(f"[DDPM loss] Score shape: {score.shape}", flush=True)
-        losses = torch.square(score - noise)
-        print(f"[DDPM loss] Noise mean: {noise.mean().item():.4f}, std: {noise.std().item():.4f}", flush=True)
+        a = sqrt_alphas_cumprod[labels].view(-1, 1, 1, 1)        # √ᾱ_t
+        b = sqrt_1m_alphas_cumprod[labels].view(-1, 1, 1, 1)     # √(1-ᾱ_t)
+
+        # Forward diffusion: x_t
+        x_t = a * batch + b * noise
+
+        # Concatenate condition if provided
+        cond = cond[:, None, ...] if cond is not None else None
+        perturbed_data = torch.cat([x_t, cond], dim=1) if cond is not None else x_t
+
+        # Model predicts v
+        pred = model_fn(perturbed_data, labels, metadata)
+        pred_v = pred[:, 0:1, ...]  # first channel
+
+        # Target v
+        target_v = a * noise - b * batch
+
+        # MSE loss
+        losses = (pred_v - target_v) ** 2
         losses = reduce_op(losses.reshape(losses.shape[0], -1), dim=-1)
-        loss = torch.mean(losses)
-        return loss, score, perturbed_data
+        loss = torch.mean(losses) + 1e-5
+
+        return loss, pred_v, perturbed_data
 
     return loss_fn
 
@@ -267,7 +283,7 @@ def get_step_fn(
                 f"Discrete training for {sde.__class__.__name__} is not recommended."
             )
 
-    def step_fn(state, batch, cond):
+    def step_fn(state, batch, cond, metadata):
         """Running one step of training or evaluation.
 
         This function will undergo `jax.lax.scan` so that multiple steps can be pmapped and jit-compiled together
@@ -285,7 +301,7 @@ def get_step_fn(
         if train:
             optimizer = state["optimizer"]
             optimizer.zero_grad()
-            loss = loss_fn(model, batch, cond)
+            loss = loss_fn(model, batch, cond, metadata)
             #loss.backward()
             optimize_fn(optimizer, model.parameters(), step=state["step"])
             state["step"] += 1
@@ -295,7 +311,7 @@ def get_step_fn(
                 ema = state["ema"]
                 ema.store(model.parameters())
                 ema.copy_to(model.parameters())
-                loss = loss_fn(model, batch, cond)
+                loss = loss_fn(model, batch, cond, metadata)
                 ema.restore(model.parameters())
 
         return loss

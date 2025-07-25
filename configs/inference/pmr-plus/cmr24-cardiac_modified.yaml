@@ -39,4 +39,4 @@ trainer:
 model:
   class_path: pl_modules.PromptMrModule
 
-ckpt_path: weights/cmr24-cardiac/promptmr-plus-epoch=11-step=337764.ckpt
+ckpt_path: None 

@@ -111,7 +111,7 @@ def get_model_fn(model, train=False):
       A model function.
     """
 
-    def model_fn(x, labels):
+    def model_fn(x, labels, meta):
         """Compute the output of the score-based model.
 
         Args:
@@ -124,10 +124,10 @@ def get_model_fn(model, train=False):
         """
         if not train:
             model.eval()
-            return model(x, labels)
+            return model(x, labels, meta) 
         else:
             model.train()
-            return model(x, labels)
+            return model(x, labels, meta)
 
     return model_fn
 
@@ -146,7 +146,7 @@ def get_score_fn(sde, model, train=False, continuous=False):
     """
     model_fn = get_model_fn(model, train=train)
 
-    def score_fn(x, t):
+    def score_fn(x, t, meta):
         if continuous:
             labels = sde.marginal_prob(torch.zeros_like(x), t)[1]
             # print('time_step:', labels)
@@ -156,7 +156,7 @@ def get_score_fn(sde, model, train=False, continuous=False):
             labels *= sde.N - 1
             labels = torch.round(labels).long()
 
-        score = model_fn(x, labels)
+        score = model_fn(x, labels, meta)
         return score
 
     return score_fn

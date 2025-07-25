@@ -29,7 +29,9 @@ RefineBlock = layers.RefineBlock
 ResidualBlock = layers.ResidualBlock
 ResnetBlockDDPM = layers.ResnetBlockDDPM
 Upsample = layers.Upsample
-Prompt = utils.PromptBlock
+#legacy
+#Prompt = utils.PromptBlock
+Prompt = utils.PromptBlock_meta_expressive
 Downsample = layers.Downsample
 conv3x3 = layers.ddpm_conv3x3
 get_act = layers.get_act
@@ -117,7 +119,7 @@ class DDPM(nn.Module):
 
         self.scale_by_sigma = config.model.scale_by_sigma
 
-    def forward(self, x, labels):
+    def forward(self, x, labels, meta):
         modules = self.all_modules
         m_idx = 0
         if self.conditional:
@@ -184,7 +186,7 @@ class DDPM(nn.Module):
                 m_idx += 1
             if i_level != 0:
                 # Prompt module just above
-                prompt = modules[m_idx](h)
+                prompt = modules[m_idx](h, meta)
                 #print(f"[DDPM] Step {m_idx}: prompt.shape = {prompt.shape}")
                 m_idx += 1
                 # Upsample module that expects cond/prompt argument
@@ -210,5 +212,5 @@ class DDPM(nn.Module):
             h = h / used_sigmas
 
         #print(f"[DDPM] Final output shape: {h.shape}")
-
+        
         return h

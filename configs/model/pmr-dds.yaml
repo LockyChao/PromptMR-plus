@@ -1,0 +1,12 @@
+# Description: default configuration for PromptMR+ model, may vary for different datasets
+# TODO: adjust the config 
+model:
+  class_path: pl_modules.DDS_Sampling
+
+# add model tags to wandb
+trainer:
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      tags: [dds]
+  

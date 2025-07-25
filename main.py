@@ -212,10 +212,13 @@ def run_cli():
 
     cli = CustomLightningCLI(
         save_config_callback=CustomSaveConfigCallback,
-        save_config_kwargs={"overwrite": True},
+        save_config_kwargs={"overwrite": True}
     )
     cli.trainer.callbacks.append(checkpoint_callback)
 
+    # Manually call validation only
+    cli.trainer.validate(cli.model, datamodule=cli.datamodule)
+    
     # Update DataLoader to use the custom collate function
     train_loader = DataLoader(
         train_dataset,
@@ -234,6 +237,7 @@ def run_cli():
         num_workers=num_workers,
         pin_memory=True,
     )
+    
 
 
 if __name__ == "__main__":

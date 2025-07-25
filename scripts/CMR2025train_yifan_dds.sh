@@ -4,14 +4,14 @@
 #SBATCH --error=errors/%j.log
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=250G
+#SBATCH --mem=96G
 #SBATCH --time=168:00:00
-#SBATCH --gres=gpu:l40s:4
+#SBATCH --gres=gpu:l40s:1
 
 source activate cmrxrecon
 
 CMRROOT=/common/lidxxlab/Yifan/PromptMR-plus
-SAVE_DIR=/common/lidxxlab/Yifan/PromptMR-plus/experiments/cmr25_ddpm
+SAVE_DIR=/common/lidxxlab/Yifan/PromptMR-plus/experiments/cmr25_dds
 
 echo "Detailed GPU Information:"
 nvidia-smi -L
@@ -24,7 +24,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # Run training script with the correct LightningCLI format
 python $CMRROOT/main.py fit \
        -c $CMRROOT/configs/base.yaml \
-       -c $CMRROOT/configs/train/pmr-plus/cmr25-cardiac-ddpm.yaml \
-       -c $CMRROOT/configs/model/pmr-ddpm.yaml \
+       -c $CMRROOT/configs/train/pmr-plus/cmr25-cardiac-dds.yaml \
+       -c $CMRROOT/configs/model/pmr-dds.yaml \
        --trainer.devices=auto \
-       --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-ddpm/CMR2025_contd_auto_addmeta
+       --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-dds/CMR2025

@@ -41,12 +41,18 @@ class PromptDDPMModule(MriModule):
         super().__init__()
         self.config = config = get_config()
         self.save_hyperparameters()
+        self.pretrain = config.model.pretrain
+        self.pretrain_weights_path = config.model.pretrain_weights_path
 
         self.model = mutils.create_model(config)
         self.ema = ExponentialMovingAverage(self.model.parameters(), decay=config.model.ema_rate)
+        #wandb.watch(self.model, log='all', log_freq=100)
+        
+        self._load_pretrain_weights()
         self.scaler = get_data_scaler(config)
-        optimizer = losses.get_optimizer(config, self.model.parameters())
-        self.state = dict(optimizer=optimizer, model=self.model, ema=self.ema, step=0)
+        self.optimizer = losses.get_optimizer(config, self.model.parameters())
+        self.state = dict(optimizer=self.optimizer, model=self.model, ema=self.ema, step=0)
+        
 
         sde = sde_lib.VPSDE(config)
         optimize_fn = losses.optimization_manager(config)
@@ -59,6 +65,10 @@ class PromptDDPMModule(MriModule):
             continuous=config.training.continuous,
             likelihood_weighting=config.training.likelihood_weighting,
         )
+
+    def setup(self, stage: str):
+        if self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
+            wandb.watch(self.model, log='all', log_freq=100)
         
     def _load_pretrain_weights(self):
         # load pretrain weights
@@ -68,13 +78,11 @@ class PromptDDPMModule(MriModule):
         
         print(f"loading pretrain weights from {self.pretrain_weights_path}")
         checkpoint = torch.load(self.pretrain_weights_path)
-        upd_state_dict = {}
-        for k, v in checkpoint['state_dict'].items():
-            if 'loss.w' in k:  # Skip this key
-                continue
-            new_key = k.replace('promptmr.', '')  # or just remove 'model.'
-            upd_state_dict[new_key] = v
-        self.promptmr.load_state_dict(upd_state_dict)
+        upd_state_dict = checkpoint['state_dict']
+        # Remove 'model.' prefix if it exists
+        upd_state_dict = {k.replace('model.', ''): v for k, v in upd_state_dict.items() if 'model.' in k}
+        #self.model.load_state_dict(upd_state_dict, strict=False)
+        self.model.load_state_dict(upd_state_dict)
 
     def configure_optimizers(self):
         optim = losses.get_optimizer(self.config, self.model.parameters())
@@ -93,7 +101,11 @@ class PromptDDPMModule(MriModule):
 
     def training_step(self, batch, batch_idx):
         #sample = (input_img, gt, attrs, fname.name, data_slice, num_t, num_slices)
-        zfilled, label, attrs, fname, data_slice, num_t, num_slices = batch
+        #zfilled, label, attrs, fname, data_slice, num_t, num_slices = batch
+        zfilled, label, metadata, attrs, fname, data_slice, num_t, num_slices = batch
+        '''
+        print(f"[Train] zfilled mean: {zfilled.mean().item():.4f}, std: {zfilled.std().item():.4f}")
+        print(f"[Train] label   mean: {label.mean().item():.4f}, std: {label.std().item():.4f}")
 
         if batch_idx < 3 and self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
             zfilled_grid = vutils.make_grid(zfilled[:4, None].detach().cpu(), normalize=True, scale_each=True)
@@ -104,9 +116,10 @@ class PromptDDPMModule(MriModule):
                 "train_label": wandb.Image(label_grid, caption="Label"),
                 "global_step": self.global_step
             })
+        '''
             
         # Execute one training step
-        loss, predict, target = self.train_step_fn(self.state, label, zfilled)
+        loss, predict, target = self.train_step_fn(self.state, label, zfilled, metadata)
         #keep the first channel of predict and target
         predict = predict[:, 0:1, :, :]
         target = target[:, 0:1, :, :]
@@ -123,73 +136,89 @@ class PromptDDPMModule(MriModule):
             })
 
         self.log("train_loss", loss, prog_bar=True)
-
+        '''
+        # Log parameter deltas to wandb
+        if self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
+            for name, param in self.model.named_parameters():
+                if param.requires_grad and name in original_params:
+                    delta = (original_params[name] - param.detach()).abs().mean()
+                    self.logger.experiment.log({f"param_delta/{name}": delta.item()}, step=self.global_step)
+        '''
         if torch.isnan(loss):
-            raise ValueError("NaN loss encountered during training.")
+            self.print(f"[Rank {self.global_rank}] NaN loss at step {self.global_step}, skipping.")
 
-        #print(torch.cuda.memory_summary(device=None, abbreviated=False), flush=True)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        # Unpack batch
-        if batch_idx >= 3:
+        if batch_idx >= 1:
             return None
-        zfilled, label, attrs, fname, data_slice, num_t, num_slices = batch
+
+        zfilled, label, metadata, attrs, fname, data_slice, num_t, num_slices = batch
         device = zfilled.device
 
-        # Initialize DDIM parameters
-        num_steps = 100
         config = self.config
         sde = sde_lib.VPSDE(config)
-        zfilled = zfilled[:, None, :, :]  # Ensure zfilled is [B, C, H, W]
-        shape = zfilled.shape  # shape = [B, C, H, W]
-        x = torch.randn(shape, device=device)  # Start from noise
+        shape = (zfilled.shape[0], 1, zfilled.shape[1], zfilled.shape[2])  # [B, 1, H, W]
 
-        #concat x and zfilled
-        x = torch.cat([x, zfilled], dim=1)  # shape [B, C+1, H, W]
+        # Start from standard Gaussian noise
+        x = torch.randn(shape, device=device)
 
-        # If using EMA, apply it to the model
+        # Prepare conditioning input
+        zfilled = zfilled[:, None, :, :]  # [B, 1, H, W]
+        x = torch.cat([x, zfilled], dim=1)  # [B, 2, H, W]
+
         if config.model.ema_rate > 0:
             self.state["ema"].store(self.model.parameters())
             self.state["ema"].copy_to(self.model.parameters())
 
-        # Time discretization
+        model = self.state["model"]
+        num_steps = 100
         timesteps = torch.linspace(1.0, 1e-3, num_steps, device=device)
 
-        # Reverse sampling loop (simplified DDIM style)
-        for i, t in enumerate(timesteps):
-            t_tensor = torch.ones((shape[0],), device=device) * t  # shape [B]
-            # Predict noise or score
-            score_fn = mutils.get_score_fn(
-                model=self.model,
-                sde=sde,
-                train=False
-            )
-            score = score_fn(x, t_tensor)
+        alphas = torch.exp(-0.5 * timesteps)
+        alphas_cumprod = torch.cumprod(alphas, dim=0)
 
-            # Euler update
-            dt = -1.0 / num_steps
-            drift, diffusion = sde.sde(x, t_tensor)
-            x = x + drift * dt + diffusion[:, None, None, None] * score * torch.sqrt(torch.tensor(-dt, device=score.device))
+        for i in range(num_steps):
+            t = timesteps[i]
+            t_tensor = torch.ones((shape[0],), device=device) * t
 
-        # Compute simple MSE for validation loss
-        pred = x[:, 0:1, :, :]  # Keep only the first channel for prediction
-        target = label[:, None, :, :]  # Ensure target is [B, C, H, W]
+            with torch.no_grad():
+                # Score model should return predicted noise
+                eps = model(x, t_tensor, metadata)
+
+                # Normalize eps (optional but often useful)
+                eps = torch.clamp(eps, -5.0, 5.0)
+
+                # Compute x0 from predicted noise using VPSDE marginal
+                mean, std = sde.marginal_prob(x, t_tensor)
+                x0_pred = (x - std[:, None, None, None] * eps) / mean[:, None, None, None]
+                x0_pred = torch.clamp(x0_pred, -3.0, 3.0)
+
+                # Reverse SDE step (Euler-Maruyama style)
+                dt = timesteps[i] - timesteps[i + 1] if i < num_steps - 1 else timesteps[i]
+                drift, diffusion = sde.sde(x, t_tensor)
+                x = x + drift * dt + diffusion * torch.randn_like(x) * dt.sqrt()
+                x = torch.clamp(x, -10.0, 10.0)
+
+            x[:, 1, :, :] = zfilled[:, 0, :, :]
+            print(f"[SDE Step {i}] x mean: {x.mean().item():.4f}, std: {x.std().item():.4f}")
+
+        pred = x[:, 0:1, :, :]  # Take only the first channel
+        target = label[:, None, :, :]
+
         loss = F.mse_loss(pred, target)
-
         self.log("val_loss", loss, prog_bar=True)
 
         if batch_idx < 3 and self.logger is not None and isinstance(self.logger.experiment, wandb.sdk.wandb_run.Run):
-            # Keep only the first channel for logging
-            recon_grid = vutils.make_grid(pred[:4, 0:1].detach().cpu(), normalize=True, scale_each=True)
-            target_grid = vutils.make_grid(target[:4, 0:1].detach().cpu(), normalize=True, scale_each=True)
-
+            recon_grid = vutils.make_grid(pred[:4].detach().cpu(), normalize=True, scale_each=True)
+            target_grid = vutils.make_grid(target[:4].detach().cpu(), normalize=True, scale_each=True)
             self.logger.experiment.log({
                 "val_reconstructions": wandb.Image(recon_grid, caption="Reconstructed"),
                 "val_targets": wandb.Image(target_grid, caption="Ground Truth"),
                 "global_step": self.global_step
             })
-        
+
         return {"val_loss": loss}
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):

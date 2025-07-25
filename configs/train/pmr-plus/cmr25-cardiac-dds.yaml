@@ -5,6 +5,7 @@ data:
     data_path: /common/lidxxlab/Yifan/PromptMR-plus/CMR2025/Processed_addmeta
     #ßdata_path: /common/lidxxlab/cmrchallenge/data/CMR_sample_folder_chushu
     challenge: multicoil
+    get_kspace: true
     data_balancer:
       class_path: data.BalanceSampler
       init_args: 
@@ -62,15 +63,17 @@ trainer:
   num_nodes: 1
   max_epochs: 500
   precision: bf16-mixed
+  limit_train_batches: 0
+  limit_val_batches: 1.0
   logger: 
     class_path: lightning.pytorch.loggers.WandbLogger
     init_args:
-      save_dir: exp/cmr25-cardiac/pmr-ddpm-news
-      tags: [cmr25-cardiac-ddpm]
-      name: cmr25-cardiac-pmr-plus-ddpm
+      save_dir: exp/cmr25-cardiac/pmr-dds
+      tags: [cmr25-cardiac-dds]
+      name: cmr25-cardiac-pmr-dds
 
 model:
-  class_path: pl_modules.PromptDDPMModule
+  class_path: pl_modules.DDS_Sampling
   init_args: {}
 
 ckpt_path: null
