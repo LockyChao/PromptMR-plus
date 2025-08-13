@@ -353,7 +353,9 @@ class CustomLightningCLI(LightningCLI):
             self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
             
             # Override save_itr with the value from config, which is set in the first intsantiacia_classes()
-            self.model.save_itr = save_itr
+            if self.config.subcommand == 'predict':
+                self.model.save_itr = save_itr
+                self.model.pretrain = False
             
 
 

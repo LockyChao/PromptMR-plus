@@ -160,7 +160,7 @@ class PromptMrModule(MriModule):
             use_sens_adj = self.use_sens_adj,
         )
         
-        # self._load_pretrain_weights()
+        self._load_pretrain_weights()
         self.loss = SSIMLoss()
         
     def _load_pretrain_weights(self):
