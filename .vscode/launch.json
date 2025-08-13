@@ -39,6 +39,25 @@
                 "-o", "TaskR2_more_info.xlsx"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "PromptMRI Train",
+            "type": "debugpy",
+            "request": "launch",
+            "postDebugTask": "closeTerminal",
+            "program": "main.py",
+            "args": [
+                "fit",
+                "--config", "configs/base.yaml",
+                "--config", "configs/train/pmr-plus/CMR-37-duplicate-adjacent-timepoints.yaml",
+                "--config", "configs/model/pmr-plus-xl.yaml",
+                "--model.init_args.pretrain=True",
+                "--model.init_args.pretrain_weights_path=/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3/logs/cmr2025_task3/43qr6fxh/checkpoints/best-epochepoch=13-valvalidation_loss=0.0206.ckpt"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "console": "integratedTerminal"
         }
     ]
 }

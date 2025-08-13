@@ -594,7 +594,23 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             mask = np.asarray(hf["mask"]) if "mask" in hf else None
             target = hf[self.recons_key][ti,zi] if self.recons_key in hf else None
 
-            ti_idx_list = self._get_ti_adj_idx_list(ti, num_t)
+            # Get Modality
+            file_name = fname.name
+
+            #if file_name contrains "t2map"
+            if "t2map" in file_name.lower():
+                modality = "t2map"
+            elif "lge" in file_name.lower():
+                modality = "lge"
+            else:
+                modality = "other"
+
+            if modality == "t2map" and modality == "lge":
+                ti_idx_list = [ti for _ in range(num_t)] #duplicate the time point given t2map or lge
+            else:
+                ti_idx_list = self._get_ti_adj_idx_list(ti, num_t)
+
+            
 
             for idx in ti_idx_list:
                 kspace.append(kspace_volume[idx, zi])

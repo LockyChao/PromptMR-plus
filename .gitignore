@@ -3,5 +3,7 @@ test_func/
 *.log
 output_chushu/
 debug_T*/
+exp/
+logs/
 reconstructions0717/
 *.xlsx
