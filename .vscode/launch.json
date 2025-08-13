@@ -26,6 +26,19 @@
                 "CUDA_VISIBLE_DEVICES": "1"
             },
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Process Excel and Add Info - TaskR2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/process_excel_and_add_info.py",
+            "postDebugTask": "closeTerminal",
+            "args": [
+                "-b", "${env:LID}/cmrchallenge/code/Inference/Inf_0811_epoch9_processed/TaskR2/MultiCoil",
+                "-i", "${env:LID}/Junzhou/result_TaskR2_4.xlsx",
+                "-o", "TaskR2_more_info.xlsx"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }
