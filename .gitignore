@@ -8,3 +8,5 @@ reconstructions0717/
 exp/
 logs/
 *.ckpt
+*.tar
+*.tar.gz
