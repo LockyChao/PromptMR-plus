@@ -606,7 +606,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
                 modality = "other"
 
             if modality == "t2map" or modality == "lge":
-                ti_idx_list = [ti for _ in range(num_t)] #duplicate the time point given t2map or lge
+                ti_idx_list = [ti for _ in range(self.num_adj_slices)] #duplicate the time point given t2map or lge
             else:
                 ti_idx_list = self._get_ti_adj_idx_list(ti, num_t)
 
@@ -909,7 +909,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             modality = "other"
 
         if modality == "t2map" or modality == "lge":
-            ti_idx_list = [ti for _ in range(self.current_num_t)] #duplicate the time point given t2map or lge
+            ti_idx_list = [ti for _ in range(self.num_adj_slices)] #duplicate the time point given t2map or lge
         else:
             ti_idx_list = self._get_ti_adj_idx_list(ti, self.current_num_t)
         
