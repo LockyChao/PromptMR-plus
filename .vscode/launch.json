@@ -23,7 +23,7 @@
                 "--config", "configs/inference/pmr-plus/CMR-36-duplicate-adjacent-timepoints.yaml"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "0,1,4,5"
+                "CUDA_VISIBLE_DEVICES": "0"
             },
             "console": "integratedTerminal"
         },
