@@ -29,4 +29,5 @@ python main.py fit \
     --config $CMRROOT/configs/train/pmr-plus/CMR-37-duplicate-adjacent-timepoints.yaml \
     --config $CMRROOT/configs/model/pmr-plus-xl.yaml \
     --model.init_args.pretrain=True \
-    --model.init_args.pretrain_weights_path=/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3/logs/cmr2025_task3/43qr6fxh/checkpoints/best-epochepoch=13-valvalidation_loss=0.0206.ckpt
+    --model.init_args.pretrain_weights_path=/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3/logs/cmr2025_task3/43qr6fxh/checkpoints/best-epochepoch=13-valvalidation_loss=0.0206.ckpt \
+    --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-plus/CMR-37-duplicate-adjacent-slices

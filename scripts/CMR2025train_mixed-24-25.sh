@@ -28,5 +28,5 @@ python main.py fit \
     --config $CMRROOT/configs/base.yaml \
     --config $CMRROOT/configs/train/pmr-plus/CMR-38-mixed-24-25.yaml \
     --config $CMRROOT/configs/model/pmr-plus-xl.yaml \
-    --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-plus/CMR2025\
+    --trainer.logger.init_args.save_dir=$SAVE_DIR/promptmr-plus/mixed-24-25 \
     --model.init_args.pretrain=False
