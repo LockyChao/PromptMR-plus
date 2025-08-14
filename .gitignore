@@ -5,3 +5,5 @@ output_chushu/
 debug_T*/
 reconstructions0717/
 *.xlsx
+exp/
+logs/
