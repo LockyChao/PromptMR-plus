@@ -7,3 +7,4 @@ reconstructions0717/
 *.xlsx
 exp/
 logs/
+*.ckpt

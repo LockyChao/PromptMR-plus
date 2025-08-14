@@ -11,7 +11,7 @@ TAG="latest"
 INPUT_DIR=""
 OUTPUT_DIR=""
 TASK="task-r2"
-
+CKPT="/common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -28,8 +28,10 @@ print_usage() {
     echo "Options:"
     echo "  --project-id <ID>     Synapse project ID (required for build)"
     echo "  --tag <TAG>           Docker image tag (default: latest)"
+    echo "  --task <TASK>         Task name (default: task-r2)"
     echo "  --input <DIR>         Input directory for run (required for run)"
     echo "  --output <DIR>        Output directory for run (required for run)"
+    echo "  --ckpt <PATH>         Checkpoint file for run"
     echo ""
     echo "Examples:"
     echo "  Build: $0 --build --project-id syn12345678 --tag v1"
@@ -42,6 +44,9 @@ build_docker() {
         echo "Use --project-id <your_synapse_project_id>"
         exit 1
     fi
+
+    #Copy checkpoint file to current directory
+    cp $CKPT ./last.ckpt
 
     local image_name="docker.synapse.org/${PROJECT_ID}/${TASK}:${TAG}"
     
@@ -90,7 +95,7 @@ run_docker() {
     echo -e "${YELLOW}Image:  ${image_name}${NC}"
     
     docker run -it --rm \
-        --gpus device=0 \
+        --gpus all \
         -v "${INPUT_DIR}:/input" \
         -v "${OUTPUT_DIR}:/output" \
         "${image_name}"
@@ -125,12 +130,20 @@ while [[ $# -gt 0 ]]; do
             TAG="$2"
             shift 2
             ;;
+        --task)
+            TASK="$2"
+            shift 2
+            ;;
         --input)
             INPUT_DIR="$2"
             shift 2
             ;;
         --output)
             OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        --ckpt)
+            CKPT="$2"
             shift 2
             ;;
         -h|--help)
