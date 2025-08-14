@@ -10,7 +10,6 @@ WORKDIR /app
 ## Copy files into Docker Container
 # Copy everything first, then remove unwanted directories
 COPY . /app
-COPY /common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt /app/last.ckpt
 
 ## Install python in Docker image
 RUN apt-get update && apt-get install -y python3 && apt-get install -y python3-pip
