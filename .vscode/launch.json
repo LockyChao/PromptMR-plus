@@ -20,10 +20,10 @@
             "program": "main.py",
             "args": [
                 "predict",
-                "--config", "configs/inference/pmr-plus/cmr25-task2-val-saveitr.yaml"
+                "--config", "configs/inference/pmr-plus/CMR-36-duplicate-adjacent-timepoints.yaml"
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
+                "CUDA_VISIBLE_DEVICES": "0,1,4,5"
             },
             "console": "integratedTerminal"
         },

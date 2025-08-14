@@ -605,7 +605,7 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             else:
                 modality = "other"
 
-            if modality == "t2map" and modality == "lge":
+            if modality == "t2map" or modality == "lge":
                 ti_idx_list = [ti for _ in range(num_t)] #duplicate the time point given t2map or lge
             else:
                 ti_idx_list = self._get_ti_adj_idx_list(ti, num_t)
@@ -896,6 +896,23 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         # Compute temporal and spatial indices
         ti = slice_idx // self.current_num_z
         zi = slice_idx % self.current_num_z
+        
+        # Get Modality
+        file_name = os.path.basename(self.current_path)
+
+        #if file_name contrains "t2map"
+        if "t2map" in file_name.lower():
+            modality = "t2map"
+        elif "lge" in file_name.lower():
+            modality = "lge"
+        else:
+            modality = "other"
+
+        if modality == "t2map" or modality == "lge":
+            ti_idx_list = [ti for _ in range(self.current_num_t)] #duplicate the time point given t2map or lge
+        else:
+            ti_idx_list = self._get_ti_adj_idx_list(ti, self.current_num_t)
+        
 
         # Get temporal indices
         ti_idx_list = self._get_ti_adj_idx_list(ti, self.current_num_t)
