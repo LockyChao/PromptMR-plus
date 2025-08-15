@@ -10,3 +10,4 @@ logs/
 *.ckpt
 *.tar
 *.tar.gz
+*.sif

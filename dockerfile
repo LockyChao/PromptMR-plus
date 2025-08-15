@@ -11,6 +11,9 @@ WORKDIR /app
 # Copy everything first, then remove unwanted directories
 COPY . /app
 
+## Set correct permissions for the app directory
+RUN chmod -R 755 /app
+
 ## Install python in Docker image
 RUN apt-get update && apt-get install -y python3 && apt-get install -y python3-pip
 

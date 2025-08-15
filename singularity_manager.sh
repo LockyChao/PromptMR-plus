@@ -7,6 +7,7 @@ set -e
 
 # Default values
 DOCKER_IMAGE=""
+DOCKER_TAR=""
 INPUT_DIR=""
 OUTPUT_DIR=""
 SINGULARITY_IMAGE=""
@@ -20,12 +21,14 @@ print_usage() {
     echo "Usage: $0 [--build|--run] [options]"
     echo ""
     echo "Commands:"
-    echo "  --build    Build a Singularity image from Docker image"
+    echo "  --build    Build a Singularity image from Docker image or tar file"
     echo "  --run      Run the Singularity container"
     echo ""
     echo "Options:"
     echo "  --docker-image <IMAGE>      Full Docker image name (e.g., docker.synapse.org/syn12345678/task-r2:latest)"
-    echo "                             Required for build command"
+    echo "                             Required for build command (when not using --docker-tar)"
+    echo "  --docker-tar <TAR_FILE>     Path to Docker image tar file"
+    echo "                             Alternative to --docker-image for build command"
     echo "  --input <DIR>               Input directory for run (required for run)"
     echo "  --output <DIR>              Output directory for run (required for run)"
     echo "  --singularity-image <PATH>  Path to Singularity image file"
@@ -33,8 +36,9 @@ print_usage() {
     echo "                             For run: input path (required)"
     echo ""
     echo "Examples:"
-    echo "  Build: $0 --build --docker-image docker.synapse.org/syn12345678/task-r2:latest"
-    echo "  Build with custom output: $0 --build --docker-image docker.synapse.org/syn12345678/task-r2:v1 --singularity-image ./my-image.sif"
+    echo "  Build from Docker daemon: $0 --build --docker-image docker.synapse.org/syn12345678/task-r2:latest"
+    echo "  Build from tar file: $0 --build --docker-tar ./my-docker-image.tar"
+    echo "  Build with custom output: $0 --build --docker-tar ./image.tar --singularity-image ./my-image.sif"
     echo "  Run:   $0 --run --singularity-image ./my-image.sif --input /path/to/input --output /path/to/output"
 }
 
@@ -46,37 +50,65 @@ build_singularity() {
         exit 1
     fi
 
-    if [ -z "$DOCKER_IMAGE" ]; then
-        echo -e "${RED}Error: Docker image is required for building Singularity image${NC}"
-        echo "Use --docker-image <full_docker_image_name>"
+    # Check that either docker image or docker tar is provided, but not both
+    if [ -z "$DOCKER_IMAGE" ] && [ -z "$DOCKER_TAR" ]; then
+        echo -e "${RED}Error: Either Docker image or Docker tar file is required for building Singularity image${NC}"
+        echo "Use --docker-image <full_docker_image_name> OR --docker-tar <path_to_tar_file>"
         echo "Example: --docker-image docker.synapse.org/syn12345678/task-r2:latest"
+        echo "Example: --docker-tar ./my-docker-image.tar"
+        exit 1
+    fi
+    
+    if [ -n "$DOCKER_IMAGE" ] && [ -n "$DOCKER_TAR" ]; then
+        echo -e "${RED}Error: Cannot specify both --docker-image and --docker-tar. Choose one.${NC}"
+        exit 1
+    fi
+    
+    # Validate tar file exists if specified
+    if [ -n "$DOCKER_TAR" ] && [ ! -f "$DOCKER_TAR" ]; then
+        echo -e "${RED}Error: Docker tar file does not exist: ${DOCKER_TAR}${NC}"
         exit 1
     fi
     
     # Auto-generate singularity image name if not provided
     if [ -z "$SINGULARITY_IMAGE" ]; then
-        # Extract meaningful parts from docker image name for the filename
-        # Convert docker.synapse.org/syn12345678/task-r2:latest -> task-r2-latest.sif
-        local image_base=$(echo "$DOCKER_IMAGE" | sed 's|.*/||' | tr ':' '-')
-        SINGULARITY_IMAGE="./${image_base}.sif"
-    fi
-    
-    echo -e "${GREEN}Building Singularity image from Docker image: ${DOCKER_IMAGE}${NC}"
-    echo -e "${YELLOW}Output: ${SINGULARITY_IMAGE}${NC}"
-    echo -e "${YELLOW}This may take several minutes...${NC}"
-    
-    # Check if Docker image exists locally
-    if ! docker image inspect "${DOCKER_IMAGE}" &> /dev/null; then
-        echo -e "${YELLOW}Docker image not found locally. Attempting to pull...${NC}"
-        if ! docker pull "${DOCKER_IMAGE}"; then
-            echo -e "${RED}Error: Could not pull Docker image: ${DOCKER_IMAGE}${NC}"
-            echo -e "${YELLOW}Please ensure the image exists and you have access to it${NC}"
-            exit 1
+        if [ -n "$DOCKER_IMAGE" ]; then
+            # Extract meaningful parts from docker image name for the filename
+            # Convert docker.synapse.org/syn12345678/task-r2:latest -> task-r2-latest.sif
+            local image_base=$(echo "$DOCKER_IMAGE" | sed 's|.*/||' | tr ':' '-')
+            SINGULARITY_IMAGE="./${image_base}.sif"
+        else
+            # Generate name from tar file
+            local tar_base=$(basename "$DOCKER_TAR" .tar)
+            SINGULARITY_IMAGE="./${tar_base}.sif"
         fi
     fi
     
-    # Build Singularity image from Docker image
-    singularity build "${SINGULARITY_IMAGE}" "docker-daemon://${DOCKER_IMAGE}"
+    if [ -n "$DOCKER_TAR" ]; then
+        echo -e "${GREEN}Building Singularity image from Docker tar file: ${DOCKER_TAR}${NC}"
+        echo -e "${YELLOW}Output: ${SINGULARITY_IMAGE}${NC}"
+        echo -e "${YELLOW}This may take several minutes...${NC}"
+        
+        # Build Singularity image from Docker tar file
+        singularity build "${SINGULARITY_IMAGE}" "docker-archive://${DOCKER_TAR}"
+    else
+        echo -e "${GREEN}Building Singularity image from Docker image: ${DOCKER_IMAGE}${NC}"
+        echo -e "${YELLOW}Output: ${SINGULARITY_IMAGE}${NC}"
+        echo -e "${YELLOW}This may take several minutes...${NC}"
+        
+        # Check if Docker image exists locally
+        if ! docker image inspect "${DOCKER_IMAGE}" &> /dev/null; then
+            echo -e "${YELLOW}Docker image not found locally. Attempting to pull...${NC}"
+            if ! docker pull "${DOCKER_IMAGE}"; then
+                echo -e "${RED}Error: Could not pull Docker image: ${DOCKER_IMAGE}${NC}"
+                echo -e "${YELLOW}Please ensure the image exists and you have access to it${NC}"
+                exit 1
+            fi
+        fi
+        
+        # Build Singularity image from Docker image
+        singularity build "${SINGULARITY_IMAGE}" "docker-daemon://${DOCKER_IMAGE}"
+    fi
     
     echo -e "${GREEN}Successfully built Singularity image: ${SINGULARITY_IMAGE}${NC}"
     echo -e "${YELLOW}You can run it with:${NC}"
@@ -129,6 +161,7 @@ run_singularity() {
     
     # Run Singularity container with GPU support and volume bindings
     singularity run --nv \
+        --pwd /app \
         -B "${INPUT_DIR}:/input" \
         -B "${OUTPUT_DIR}:/output" \
         "${SINGULARITY_IMAGE}"
@@ -159,6 +192,10 @@ while [[ $# -gt 0 ]]; do
             DOCKER_IMAGE="$2"
             shift 2
             ;;
+        --docker-tar)
+            DOCKER_TAR="$2"
+            shift 2
+            ;;
         --input)
             INPUT_DIR="$2"
             shift 2
@@ -182,6 +219,14 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Check that --docker-image and --docker-tar cannot be specified at the same time
+if [ -n "$DOCKER_IMAGE" ] && [ -n "$DOCKER_TAR" ]; then
+    echo -e "${RED}Error: Cannot specify both --docker-image and --docker-tar. Choose one.${NC}"
+    echo "Use either --docker-image <image_name> OR --docker-tar <tar_file_path>"
+    print_usage
+    exit 1
+fi
 
 case $COMMAND in
     build)
