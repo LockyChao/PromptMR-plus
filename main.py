@@ -104,22 +104,9 @@ class CustomSaveConfigCallback(SaveConfigCallback):
         super().setup(trainer, pl_module, stage)
 
     def save_config(self, trainer, pl_module, stage) -> None:
-        """Save the configuration file under the logger's run directory."""
-        if stage == "predict":
-            print("Skipping saving configuration in predict mode.")
-            return  
-        if trainer.logger is not None and hasattr(trainer.logger, "experiment"):
-            project_name = trainer.logger.experiment.project_name()
-            run_id = trainer.logger.experiment.id
-            save_dir = trainer.logger.save_dir
-            run_dir = os.path.join(save_dir, project_name, run_id)
-            
-            os.makedirs(run_dir, exist_ok=True)
-            config_path = os.path.join(run_dir, "config.yaml")
-            self.parser.save(
-                self.config, config_path, skip_none=False, overwrite=self.overwrite, multifile=self.multifile
-            )
-            print(f"Configuration saved to {config_path}")
+        """Skip saving configuration entirely for containerized runs."""
+        print("Skipping configuration save (containerized environment)")
+        return
 
 
 class CustomWriter(BasePredictionWriter):
