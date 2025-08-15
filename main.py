@@ -350,7 +350,7 @@ def run_cli():
     preprocess_save_dir()
 
     cli = CustomLightningCLI(
-        save_config_callback=CustomSaveConfigCallback,
+        save_config_callback=None,
         save_config_kwargs={"overwrite": True},
     )
 
