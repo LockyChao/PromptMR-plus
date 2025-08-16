@@ -266,7 +266,7 @@ class CustomWriter(BasePredictionWriter):
                     })
                 
         # Directory for saving the final volumes
-        save_dir = self.output_dir / "reconstructions"
+        save_dir = self.output_dir
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # --- FIX #1: This entire block replaces your old "Sort and Stack" logic ---
@@ -308,7 +308,7 @@ class CustomWriter(BasePredictionWriter):
 
                 print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
                 # The save function is now much simpler
-                save_reconstructions(final_4d_volume, fname, save_dir)
+                save_reconstructions(final_4d_volume, fname, save_dir, is_mat=True)
                 
                 if save_itr:
                     #strip extension name from fname
