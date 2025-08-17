@@ -5,6 +5,21 @@ import re
 from pathlib import Path
 import argparse
 from typing import Tuple, Optional, List
+import scipy.io as sio
+import numpy as np
+
+def get_percentile(filename: str, percentile: int = 90) -> Optional[float]:
+    """
+    Extract 90th percentile from mat file.
+    """
+    try:
+        mat_data = sio.loadmat(filename)
+        img4ranking = mat_data['img4ranking']
+        percentile_value = float(np.percentile(img4ranking, percentile))
+        return percentile_value
+    except Exception as e:
+        print(f"Error loading mat file {filename}: {e}")
+        return None
 
 def extract_mask_and_rate(filename: str) -> Tuple[Optional[str], Optional[int]]:
     """
@@ -106,6 +121,7 @@ def process_excel_file(input_excel_path: str, base_dir: str, output_excel_path: 
         # Insert new columns before Comments
         columns.insert(comments_idx, 'Mask_Type')
         columns.insert(comments_idx + 1, 'Undersampling_Rate')
+        columns.insert(comments_idx + 2, '90th_Percentile')
         # Add other columns at the end
         columns.extend(['Found_File_Path', 'File_Found'])
     else:
@@ -147,11 +163,15 @@ def process_excel_file(input_excel_path: str, base_dir: str, output_excel_path: 
             
             # Extract mask type and undersampling rate
             mask_type, undersampling_rate = extract_mask_and_rate(filename)
+
+            # Extract 90th percentile
+            percentile = get_percentile(found_file, 90)
             
             df.at[idx, 'Mask_Type'] = mask_type
             df.at[idx, 'Undersampling_Rate'] = undersampling_rate  # Now an integer or None
+            df.at[idx, '90th_Percentile'] = percentile
             
-            print(f"Row {idx + 1}: Found {filename} -> Mask: {mask_type}, Rate: {undersampling_rate}")
+            print(f"Row {idx + 1}: Found {filename} -> Mask: {mask_type}, Rate: {undersampling_rate}, 90th Percentile: {percentile}")
         else:
             df.at[idx, 'File_Found'] = False
             print(f"Row {idx + 1}: No file found for {modality}/{center}/{vendor}/{patient}/{file_prefix}")

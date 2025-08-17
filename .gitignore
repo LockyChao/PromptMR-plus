@@ -7,3 +7,5 @@ exp/
 logs/
 reconstructions0717/
 *.xlsx
+*.sif
+*.png
