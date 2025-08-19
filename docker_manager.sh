@@ -104,6 +104,7 @@ run_docker() {
     fi
     
     docker run -it --rm \
+        --shm-size=16g \
         ${GPU_ARG} \
         -v "${INPUT_DIR}:/input" \
         -v "${OUTPUT_DIR}:/output" \
