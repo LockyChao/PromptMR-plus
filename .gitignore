@@ -5,3 +5,7 @@ output_chushu/
 debug_T*/
 reconstructions0717/
 *.xlsx
+*.sif
+*.png
+exp/
+
