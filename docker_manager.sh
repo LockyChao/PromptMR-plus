@@ -94,8 +94,17 @@ run_docker() {
     echo -e "${YELLOW}Output: ${OUTPUT_DIR}${NC}"
     echo -e "${YELLOW}Image:  ${image_name}${NC}"
     
+    # Use CUDA_VISIBLE_DEVICES if set, otherwise use all GPUs
+    if [ -n "${CUDA_VISIBLE_DEVICES}" ]; then
+        GPU_ARG="--gpus device=${CUDA_VISIBLE_DEVICES}"
+        echo -e "${YELLOW}Using GPUs: ${CUDA_VISIBLE_DEVICES}${NC}"
+    else
+        GPU_ARG="--gpus all"
+        echo -e "${YELLOW}Using all available GPUs${NC}"
+    fi
+    
     docker run -it --rm \
-        --gpus all \
+        ${GPU_ARG} \
         -v "${INPUT_DIR}:/input" \
         -v "${OUTPUT_DIR}:/output" \
         "${image_name}"
