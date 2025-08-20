@@ -46,6 +46,7 @@ build_docker() {
     fi
 
     #Copy checkpoint file to current directory
+    echo -e "${GREEN}Copying checkpoint file: ${CKPT}${NC}"
     cp $CKPT ./last.ckpt
 
     local image_name="docker.synapse.org/${PROJECT_ID}/${TASK}:${TAG}"
