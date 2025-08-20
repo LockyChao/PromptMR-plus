@@ -882,15 +882,15 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         kspace = [self.current_volume[idx, zi] for idx in ti_idx_list]
         kspace = np.concatenate(kspace, axis=0)
 
-        print('kspace shape:',kspace.shape)
+        # print('kspace shape:',kspace.shape)
         
         _path = self.current_path.replace(str(self.root)+'/', '')
         # gather mask data for adjacent slices
         if self.year==2023 or (self.year==2024 and 'UnderSample_Task1' in _path): 
             mask = self.mask
         else: #check the reason for this??
-            print('mask length 2025:',len(self.mask))
-            print('max ti:',max(ti_idx_list)+1)
+            # print('mask length 2025:',len(self.mask))
+            # print('max ti:',max(ti_idx_list)+1)
             if len(self.mask) == 1:
                 mask = [self.mask[0] for _ in ti_idx_list]
             elif len(self.mask) >= max(ti_idx_list) + 1:
