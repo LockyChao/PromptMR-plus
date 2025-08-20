@@ -28,4 +28,4 @@ ENV CONFIG_FILE=${CONFIG_FILE}
 RUN echo "CONFIG_FILE is set to: ${CONFIG_FILE}"
 
 ## Entrypoint
-ENTRYPOINT ["python", "main.py", "predict", "--config", "${CONFIG_FILE}"]
+ENTRYPOINT python main.py predict --config ${CONFIG_FILE}
