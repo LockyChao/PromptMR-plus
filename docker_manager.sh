@@ -10,7 +10,7 @@ PROJECT_ID="syn68754167"
 TAG="latest"
 INPUT_DIR=""
 OUTPUT_DIR=""
-TASK="task-r2"
+TASK="task-r1"
 CKPT="$HOME/HPC-LIDXXLAB/Yi/training_results_folder/multi_dataset_training_dataset_specific/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/1e5n1toc/checkpoints/best-epochepoch=06-valvalidation_loss=0.0150.ckpt"
 # Colors for output
 RED='\033[0;31m'
