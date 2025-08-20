@@ -22,6 +22,7 @@ RUN pip3 install -r /app/requirements.txt
 
 # Define build argument with default value
 ARG CONFIG_FILE=configs/inference/pmr-plus/cmr25-task2-docker.yaml
+ENV CONFIG_FILE=${CONFIG_FILE}
 
 
 RUN echo "CONFIG_FILE is set to: ${CONFIG_FILE}"
