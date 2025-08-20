@@ -20,5 +20,11 @@ RUN apt-get update && apt-get install -y python3 && apt-get install -y python3-p
 ## Install requirements
 RUN pip3 install -r /app/requirements.txt
 
+# Define build argument with default value
+ARG CONFIG_FILE=configs/inference/pmr-plus/cmr25-task2-docker.yaml
+
+
+RUN echo "CONFIG_FILE is set to: ${CONFIG_FILE}"
+
 ## Entrypoint
-ENTRYPOINT ["python", "main.py", "predict", "--config", "configs/inference/pmr-plus/cmr25-task2-docker.yaml"]
+ENTRYPOINT ["python", "main.py", "predict", "--config", "${CONFIG_FILE}"]

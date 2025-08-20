@@ -52,8 +52,17 @@ build_docker() {
     
     echo -e "${GREEN}Building Docker image: ${image_name}${NC}"
     echo -e "${YELLOW}This may take several minutes...${NC}"
+
+    if [ "$TASK" == "task-r1" ]; then
+        CONFIG_FILE="configs/inference/pmr-plus/cmr25-task1-docker.yaml"
+    elif [ "$TASK" == "task-r2" ]; then
+        CONFIG_FILE="configs/inference/pmr-plus/cmr25-task2-docker.yaml"
+    else
+        echo -e "${RED}Error: Invalid task: ${TASK}${NC}"
+        exit 1
+    fi
     
-    docker build -t "${image_name}" .
+    docker build -t "${image_name}" --build-arg CONFIG_FILE="${CONFIG_FILE}" .
     
     echo -e "${GREEN}Successfully built Docker image: ${image_name}${NC}"
     echo -e "${YELLOW}You can now push it to Synapse with:${NC}"
