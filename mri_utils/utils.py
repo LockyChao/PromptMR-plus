@@ -179,7 +179,7 @@ def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False):
 
 
         mat_dict = {"img4ranking": reconstruction}
-        out_fname = out_dir / fname
+        out_fname = str(out_dir / fname)
 
         if 'UnderSample_Task' in out_fname:
             out_fname = out_fname.replace('UnderSample_Task', 'Task')
