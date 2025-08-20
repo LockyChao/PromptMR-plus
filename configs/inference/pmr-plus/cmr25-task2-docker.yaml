@@ -32,7 +32,7 @@ data:
     test_filter: 
       class_path: data.FuncFilterString
       init_args:
-        filter_str: null
+        filter_str: TaskR2
 
 
 # dataset specific settings
