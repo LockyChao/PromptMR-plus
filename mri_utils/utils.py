@@ -6,6 +6,7 @@ LICENSE file in the root directory of this source tree.
 """
 
 from pathlib import Path
+import os
 from typing import Dict, Optional
 
 import scipy
@@ -184,7 +185,7 @@ def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False):
         if 'UnderSample_Task' in out_fname:
             out_fname = out_fname.replace('UnderSample_Task', 'Task')
 
-        out_fname.parent.mkdir(parents=True, exist_ok=True)  # Create parent directories
+        os.makedirs(os.path.dirname(out_fname), exist_ok=True)  # Create parent directories
         sio.savemat(str(out_fname), mat_dict)  # Convert PosixPath to string
     else:
         out_fname = out_dir / fname
