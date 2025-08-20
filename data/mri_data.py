@@ -778,7 +778,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             #kspace_volume = kspace_volume[:, None, :, :, :]
             # ── Duplicate the fake time dimension to size 2 (maybe)──
             kspace_volume = np.stack([kspace_volume,kspace_volume])  # modified by chushu
-            print('deplicated kspace:',kspace_volume.shape)
+            # print('deplicated kspace:',kspace_volume.shape)
             # Shape is now (C, 1, Z, H, W) → repeat along axis=1
             # kspace_volume = np.repeat(kspace_volume, repeats=2, axis=1)
         elif len(kspace_volume.shape) == 5:
@@ -805,12 +805,12 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         elif self.year == 2025:
             mask_path = path.replace('UnderSample_Task', 'Mask_Task').replace('_kus_', '_mask_')
             org_mask = load_mask(mask_path)
-            print('orginal mask shape:',org_mask.shape)
+            # print('orginal mask shape:',org_mask.shape)
             if len(org_mask.shape)==2: #duplicate mask for T1w/T2w
                 mask_new=np.stack([org_mask,org_mask])
                 mask= mask_new.transpose(0,2,1) # [2,514,201]
                 mask = mask[:,:,:,None] #[2,514,201,1]
-                print('duplicate mask:',mask.shape)
+                # print('duplicate mask:',mask.shape)
             else: # for contrast with Nt
                 mask = load_mask(mask_path).transpose(0,2,1) 
                 mask = mask[:,:,:,None] #[2,514,201,1]
@@ -834,8 +834,8 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
 
         # mask = mask.astype(np.float32)  # Convert mask to float32
 
-        print('debug mask: ', mask.shape, kspace_volume.shape)
-        print(mask_path)
+        # print('debug mask: ', mask.shape, kspace_volume.shape)
+        # print(mask_path)
 
         attrs = {
             'encoding_size': [kspace_volume.shape[3], kspace_volume.shape[4], 1],
@@ -901,7 +901,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             mask = np.stack(mask, axis=0)
             mask = mask.repeat(nc, axis=0)
 
-            print('mask shape:',mask.shape)
+            # print('mask shape:',mask.shape)
 
         # Prepare the sample
         if self.transform is None:
