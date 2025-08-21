@@ -15,6 +15,76 @@ import sys
 from pathlib import Path
 
 
+def count_and_categorize_mat_files(root_path):
+    """
+    Count and categorize .mat files in the given directory and its subdirectories.
+    
+    Args:
+        root_path (str): The root directory to analyze
+        
+    Returns:
+        dict: Dictionary with counts for each category and file lists
+    """
+    root = Path(root_path)
+    
+    if not root.exists():
+        print(f"Error: Path '{root_path}' does not exist.")
+        return {"mask": 0, "undersample": 0, "other": 0, "total": 0}
+    
+    if not root.is_dir():
+        print(f"Error: Path '{root_path}' is not a directory.")
+        return {"mask": 0, "undersample": 0, "other": 0, "total": 0}
+    
+    # Initialize counters
+    categories = {
+        "mask": [],
+        "undersample": [],
+        "other": []
+    }
+    
+    # Walk through all files recursively
+    for file_path in root.rglob("*.mat"):
+        if file_path.is_file():
+            # Convert to string for path analysis
+            path_str = str(file_path).lower()
+            
+            # Categorize based on path content
+            if "mask" in path_str:
+                categories["mask"].append(file_path)
+            elif "undersample" in path_str:
+                categories["undersample"].append(file_path)
+            else:
+                categories["other"].append(file_path)
+    
+    # Create result dictionary with counts
+    result = {
+        "mask": len(categories["mask"]),
+        "undersample": len(categories["undersample"]),
+        "other": len(categories["other"]),
+        "total": len(categories["mask"]) + len(categories["undersample"]) + len(categories["other"]),
+        "files": categories
+    }
+    
+    return result
+
+
+def print_mat_file_summary(mat_info):
+    """
+    Print a summary of mat files by category.
+    
+    Args:
+        mat_info (dict): Dictionary with mat file counts and categories
+    """
+    print("\n" + "=" * 50)
+    print("MAT FILE SUMMARY")
+    print("=" * 50)
+    print(f"Mask files: {mat_info['mask']}")
+    print(f"Undersample files: {mat_info['undersample']}")
+    print(f"Other files: {mat_info['other']}")
+    print(f"Total .mat files: {mat_info['total']}")
+    print("=" * 50)
+
+
 def generate_folder_structure(root_path, output_file=None):
     """
     Generate a folder structure visualization for the given root path.
@@ -87,6 +157,10 @@ def generate_folder_structure(root_path, output_file=None):
         return
     
     print(f"Generating folder structure for: {root.absolute()}")
+    
+    # Count .mat files
+    mat_info = count_and_categorize_mat_files(root_path)
+    print_mat_file_summary(mat_info)
     print("=" * 50)
     
     # Generate the tree structure
@@ -98,6 +172,8 @@ def generate_folder_structure(root_path, output_file=None):
     if output_file:
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(f"Total .mat files: {mat_info['total']}\n")
+                f.write("=" * 50 + "\n")
                 f.write(output_text)
             print(f"Folder structure saved to: {output_file}")
         except Exception as e:
@@ -167,11 +243,22 @@ def generate_folder_structure_simple(root_path, output_file=None):
     # Join all lines
     output_text = "\n".join(lines)
     
+    # Count and categorize .mat files
+    mat_info = count_and_categorize_mat_files(root_path)
+    
     # Output the result
     if output_file:
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(output_text)
+                f.write(f"\n\n{'=' * 50}\n")
+                f.write("MAT FILE SUMMARY\n")
+                f.write(f"{'=' * 50}\n")
+                f.write(f"Mask files: {mat_info['mask']}\n")
+                f.write(f"Undersample files: {mat_info['undersample']}\n")
+                f.write(f"Other files: {mat_info['other']}\n")
+                f.write(f"Total .mat files: {mat_info['total']}\n")
+                f.write(f"{'=' * 50}\n")
             print(f"Folder structure saved to: {output_file}")
         except Exception as e:
             print(f"Error writing to file: {e}")
@@ -180,6 +267,9 @@ def generate_folder_structure_simple(root_path, output_file=None):
     else:
         print("\nFolder structure:")
         print(output_text)
+    
+    # Print mat file summary at the end
+    print_mat_file_summary(mat_info)
 
 
 def main():
