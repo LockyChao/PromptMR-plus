@@ -8,13 +8,21 @@ from typing import Tuple, Optional, List
 import scipy.io as sio
 import numpy as np
 
-def get_percentile(filename: str, percentile: int = 90) -> Optional[float]:
+def get_percentile(filename: str, percentile: int = 90, normalize: bool = False) -> Optional[float]:
     """
     Extract 90th percentile from mat file.
     """
     try:
         mat_data = sio.loadmat(filename)
         img4ranking = mat_data['img4ranking']
+        
+        if normalize:
+            # Normalize img4ranking by mean and std
+            mean_val = np.mean(img4ranking)
+            std_val = np.std(img4ranking)
+            if std_val > 0:
+                img4ranking = (img4ranking - mean_val) / std_val
+
         percentile_value = float(np.percentile(img4ranking, percentile))
         return percentile_value
     except Exception as e:
@@ -66,7 +74,7 @@ def find_matching_file(base_dir: str, modality: str, center: str, vendor: str, p
         base_dir,
         modality,
         "ValidationSet",
-        "UnderSample_TaskR2", 
+        "UnderSample_TaskS2", 
         center,
         vendor,
         patient,
