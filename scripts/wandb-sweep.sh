@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:l40s:4
 
 
-source activate cmr_cs
+source activate cmr
 
 
 CMRROOT=$PWD
@@ -21,4 +21,4 @@ echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
 
 # wandb agent your-username/promptmr-sweep/abc123def
-wandb agent $1/promptmr-sweep/$2
+wandb agent biricon/PromptMR-plus/$1
