@@ -1,5 +1,12 @@
 # PromptMR+
 
+## Regarding WANDB Sweep
+
+Start a sweep by running:
+```bash
+./scripts/wandb-sweep.sh <sweep_id> # e.g. 8jn6bed8
+```
+
 [[Paper](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/09565.pdf)] [[Supplementary](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/09565-supp.pdf)] [[Slides](https://eccv.ecva.net/media/eccv-2024/Slides/1057_OoLoVIz.pdf)] [[Video](https://youtu.be/8h0LNcypqYk?si=jgxaDXqoKGm35P9g)]
 
 This repository contains the official implementation of the paper *Rethinking Deep Unrolled Models for Accelerated MRI Reconstruction.* In this work, we propose effective gradient-based learning and memory-efficient sensitivity map estimation to enhance deep unrolled models for multicoil MRI reconstruction. PromptMR+ is an example of applying these simple yet efficient techniques to the deep unrolled model PromptMR.
