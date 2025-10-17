@@ -10,8 +10,10 @@ trainer:
   callbacks:
   - class_path: __main__.CustomWriter
     init_args:
-      output_dir: /common/lidxxlab/chushu/PromptMR-plus/output_chushu/Inference_test
+      output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_holdout_16c5adj
       write_interval: batch_and_epoch
+      save_masked_kspace: true
+      masked_kspace_output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_holdout_masked
   fast_dev_run: false
   max_epochs: null
   min_epochs: null
@@ -48,7 +50,7 @@ trainer:
 model:
   class_path: pl_modules.PromptMrModule
   init_args:
-    num_cascades: 12
+    num_cascades: 20
     num_adj_slices: 5
     n_feat0: 48
     feature_dim:
@@ -93,7 +95,7 @@ model:
     learnable_prompt: false
     adaptive_input: true
     n_buffer: 4
-    n_history: 0
+    n_history: 15
     use_sens_adj: true
     model_version: promptmr_v2
     lr: 0.0002
@@ -104,31 +106,78 @@ model:
     compute_sens_per_coil: false
     pretrain: false
     pretrain_weights_path: null
+    kspace_loss_weight: 0.01
     num_log_images: 16
 data:
-  class_path: pl_modules.InferenceDataModule
+  class_path: pl_modules.DataModule
   init_args:
-    slice_dataset: data.CmrxReconInferenceSliceDataset
-    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task2/TaskR2/MultiCoil
-    test_transform:
+    slice_dataset: data.CmrxReconSliceDataset
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDirectInference
+    challenge: multicoil
+    train_transform:
       class_path: data.CmrxReconDataTransform
       init_args:
-        mask_func: null
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies:
+            - 16
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+            seed: null
         uniform_resolution: null
         use_seed: true
-        mask_type: cartesian_or_radial
-        test_num_low_frequencies: 16
-    challenge: multicoil
-    test_filter:
-      class_path: data.FuncFilterString
+        mask_type: null
+        test_num_low_frequencies: null
+    val_transform:
+      class_path: data.CmrxReconDataTransform
       init_args:
-        filter_str: T1w/ValidationSet/UnderSample_TaskR2
-        logic: or
+        mask_func:
+          class_path: data.CmrxRecon25MaskFunc
+          init_args:
+            num_low_frequencies:
+            - 16
+            num_adj_slices: 5
+            mask_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Processed/Mask/summary.h5
+            seed: null
+        uniform_resolution: null
+        use_seed: true
+        mask_type: null
+        test_num_low_frequencies: null
+    combine_train_val: false
+    sample_rate: null
+    val_sample_rate: null
+    volume_sample_rate: null
+    val_volume_sample_rate: null
+    train_filter: null
+    val_filter: null
+    use_dataset_cache_file: false
     batch_size: 1
     num_workers: 4
-    distributed_sampler: true
+    distributed_sampler: false
     num_adj_slices: 5
+    data_balancer:
+      class_path: data.BalanceSampler
+      init_args:
+        ratio_dict:
+          T1map: 1
+          T1rho: 2
+          T1w: 2
+          T2map: 1
+          T2smap: 8
+          T2w: 2
+          cine_lax: 1
+          lge_lax: 1
+          cine_sax: 1
+          lge_sax: 1
+          cine_ot: 5
+          cine_lvot: 8
+          cine_rvot: 8
+          perfusion: 2
+          blackblood: 8
+          flow2d: 4
+    use_pre_whiten: false
 optimizer: null
 lr_scheduler: null
 return_predictions: null
-ckpt_path: /common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt
+ckpt_path: /common/lidxxlab/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/ophww12n/checkpoints/best-epochepoch=08-valvalidation_loss=0.0156.ckpt

@@ -1,8 +1,10 @@
+ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3/logs/cmr2025_task3/43qr6fxh/checkpoints/best-epochepoch=13-valvalidation_loss=0.0206.ckpt
+
 data:
   class_path: pl_modules.InferenceDataModule
   init_args:
     slice_dataset: data.CmrxReconInferenceSliceDataset
-    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task2/TaskR2/MultiCoil
+    data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/Validation/Task4/TaskS2/MultiCoil
     # data_path: /common/lidxxlab/cmrchallenge/data/CMR_2024_inference_sample/MultiCoil
     challenge: multicoil
     test_transform:
@@ -25,14 +27,16 @@ data:
         use_seed: true
         
         # test_num_low_frequencies: -1   # If mask_func is none, use this parameter
-    num_adj_slices: 5
+    num_adj_slices: 7
     batch_size: 1
-#   num_workers: 4
+    num_workers: 1
+    # pin_memory: true
     distributed_sampler: true
     test_filter: 
       class_path: data.FuncFilterString
       init_args:
-        filter_str: T1w/ValidationSet/UnderSample_TaskR2
+        filter_str: null    
+        # T2w/ValidationSet/UnderSample_TaskR2 
 
 
 # dataset specific settings
@@ -41,13 +45,14 @@ trainer:
   accelerator: gpu
   strategy: ddp
   devices: auto
+  precision: 16 
   num_nodes: 1
-  logger: false
+
+
   callbacks:
-    -
-      class_path: __main__.CustomWriter
+    - class_path: __main__.CustomWriter
       init_args:
-        output_dir: /common/lidxxlab/chushu/PromptMR-plus/output_chushu/Inference_test
+        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_TaskS2
         write_interval: batch_and_epoch
 
 model:
@@ -55,10 +60,9 @@ model:
   init_args:
     pretrain: false
     pretrain_weights_path: null
+    num_adj_slices: 7
+    num_cascades: 16
+    n_history: 15
 
-ckpt_path: /common/lidxxlab/cmrchallenge/code/chaowei/experiments/cmr25/promptmr-plus/CMR2025/deep_recon/uec2kxvx/checkpoints/last.ckpt
 
-
-
-
-# python main.py predict --config configs/inference/pmr-plus/cmr25-task2-val.yaml
+# python main.py predict --config configs/inference/pmr-plus/cmr-task3-val-paramupgrade.yaml
