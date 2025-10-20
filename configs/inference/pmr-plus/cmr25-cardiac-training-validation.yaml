@@ -24,6 +24,10 @@ data:
           perfusion: 2
           blackblood: 8
           flow2d: 4
+      test_filter: 
+      class_path: data.FuncFilterString
+      init_args:
+        filter_str: null #Mapping/ValidationSet/UnderSample_Task1/P001/
 
     data_path: /common/lidxxlab/cmrchallenge/data/CMR2025/ProcessedDirectInference
     distributed_sampler: false

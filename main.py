@@ -239,7 +239,7 @@ class CustomWriter(BasePredictionWriter):
                 final_4d_volume = stacked_volume.view(num_time_frames, num_slices_per_time, h, w)
 
                 # f. Check if we need to remove fake time dimension 
-                if has_fake_time_dim and num_time_frames == 2:
+                if False: #has_fake_time_dim and num_time_frames == 2:
                     # Original data was 4D, fake time dimension was added, remove it
                     print(f"Removing fake time dimension for {fname}: {final_4d_volume.shape} -> 3D")
                     # Take the first time frame and remove the time dimension
@@ -249,7 +249,7 @@ class CustomWriter(BasePredictionWriter):
                 else:
                     print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
                     # The save function is now much simpler
-                    save_reconstructions(final_4d_volume, fname, save_dir)
+                    save_reconstructions(final_4d_volume, fname, save_dir, is_mat=True)
                 
                 # Save masked k-space and masks if enabled
                 if self.save_masked_kspace and stacked_masked_kspace is not None:

@@ -36,7 +36,7 @@ data:
     test_filter: 
       class_path: data.FuncFilterString
       init_args:
-        filter_str: null
+        filter_str: Flow2d/ValidationSet/UnderSample_TaskS2/Center010/UIH_30T_umr790/P019
 
 
 # dataset specific settings
@@ -52,7 +52,7 @@ trainer:
   callbacks:
     - class_path: __main__.CustomWriter
       init_args:
-        output_dir: /common/lidxxlab/cmrchallenge/code/Inference/inf_1015_20c19h_e4
+        output_dir: /common/lidxxlab/Junzhou/pmr_plus_inference_test/flow2d/inference
         write_interval: batch_and_epoch
         
 

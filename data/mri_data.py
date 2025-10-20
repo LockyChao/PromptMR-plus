@@ -590,11 +590,11 @@ class CmrxReconSliceDataset(torch.utils.data.Dataset):
             num_slices = attrs['shape'][1]
 
             # check if the data is 2d flow
-            is_2d_flow = True if '2d_flow' in str(fname).lower() else False
+            is_flow2d = True if 'flow2d' in str(fname).lower() else False
 
             # 2D flow is supposed to come in as [phase_contrast, Nt, Nc, Ny, Nx], we need to swap 
             # the first two dimensions to treat phase contrast as the slice dimension
-            if is_2d_flow:
+            if is_flow2d:
                 kspace_volume = kspace_volume.transpose(1,0,2,3,4)
                 num_t = attrs['shape'][1]
                 num_slices = attrs['shape'][0]
@@ -788,12 +788,12 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         """
         kspace_volume = load_kdata(path)
 
-        # check if the data is 2d flow
-        is_2d_flow = True if '2d_flow' in str(path).lower() else False
+        # check if the data is flow2d
+        is_flow2d = True if 'flow2d' in str(path).lower() else False
 
         # 2D flow is supposed to come in as [phase_contrast, Nt, Nc, Ny, Nx], we need to swap 
         # the first two dimensions to treat phase contrast as the slice dimension
-        if is_2d_flow:
+        if is_flow2d:
             kspace_volume = kspace_volume.transpose(1,0,2,3,4)
 
         # Initialize fake time dimension flag

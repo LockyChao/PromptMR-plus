@@ -2,7 +2,7 @@ from .coil_combine import rss, rss_complex, sens_expand, sens_reduce
 from .fftc import fft2c_new as fft2c
 from .fftc import fftshift, ifftshift, roll
 from .fftc import ifft2c_new as ifft2c
-from .losses import SSIMLoss
+from .losses import SSIMLoss, normalized_l1_loss
 from .math import (
     complex_abs,
     complex_abs_sq,

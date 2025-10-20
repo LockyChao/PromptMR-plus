@@ -8,3 +8,4 @@ reconstructions0717/
 *.sif
 *.png
 exp/
+lightning_logs/

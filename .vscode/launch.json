@@ -21,6 +21,19 @@
         ],
         "env": {"CUDA_VISIBLE_DEVICES": "1"},
         "console": "integratedTerminal"
+      },
+      {
+      "name": "PromptMRI Predict - CMR Task4",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "main.py",
+        "args": [
+          "predict",
+          "--config",
+          "configs/inference/pmr-plus/cmr-task4-val.yaml"
+        ],
+        "env": {"CUDA_VISIBLE_DEVICES": "4"},
+        "console": "integratedTerminal"
       }
     ]
   }
