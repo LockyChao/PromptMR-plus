@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "closeTerminal",
+        "type": "process",
+        "command": "${command:workbench.action.terminal.kill}",
+        "problemMatcher": []
+      }
+    ]
+  }

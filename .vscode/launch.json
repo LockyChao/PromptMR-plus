@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name"   : "Python Debugger: Current File",
+        "type"   : "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal"
+      },
+      {
+      "name": "PromptMRI Train",
+        "type": "debugpy",
+        "request": "launch",
+        "postDebugTask": "closeTerminal",
+        "program": "main.py",
+        "args": [
+          "fit",
+          "--config",
+          "configs/train/pmr-plus/cmr25-cardiac-task3_30to15.yaml"
+        ],
+        "env": {"CUDA_VISIBLE_DEVICES": "1"},
+        "console": "integratedTerminal"
+      }
+    ]
+  }
