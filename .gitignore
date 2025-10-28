@@ -10,3 +10,12 @@ output/
 
 output_chushu/
 reconstructions0717/
+
+output_chushu/
+reconstructions0717/
+lightning_logs/
+wandb/
+output/
+*.mat
+*.h5
+*.ckpt

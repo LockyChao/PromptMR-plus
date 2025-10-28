@@ -10,7 +10,7 @@
 #SBATCH --error=/common/lidxxlab/cmrchallenge/task3/logs/cmr_inference_task3_yi_simple_%j.err
 
 Working directory
-WORKDIR=/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3_fromyi
+WORKDIR=/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3_clean
 cd $WORKDIR
 
 # Create a log directory (make sure it exists)
@@ -27,9 +27,10 @@ echo "CUDA version: $(python -c 'import torch; print(torch.version.cuda)')"
 
 Set Python path
 export PYTHONPATH=$WORKDIR:$PYTHONPATH
+export CMR_SAVE_AS_MAT=1
 
 # Inference parameters
-CONFIG_FILE="/common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task3_fromyi/yi_configs/inference/pmr-plus/cmr-task4-val-no-wandb.yaml"
+CONFIG_FILE="$WORKDIR/yi_configs/inference/pmr-plus/cmr-task4-val-no-wandb.yaml"
 BATCH_SIZE=1   # Keep batch size 1
 
 # Note: Each GPU will process a sample, so the effective batch size is 2 (1*2)
