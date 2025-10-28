@@ -158,7 +158,7 @@ def save_reconstructions_mp(reconstructions: Dict[str, np.ndarray], out_dir: Pat
 #             hf.create_dataset('reconstruction', data=recons)
             
 
-def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False):
+def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False, is_3d=False):
     """
     Saves a 4D reconstruction from a model to an h5 or mat file.
 
@@ -171,20 +171,9 @@ def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False):
     if is_mat:
         reconstruction = reconstruction_4d.cpu().numpy()
 
-        if 'T1w' in fname or 'T2w' in fname or 'BlackBlood' in fname:
-            reconstruction = reconstruction[0,...]
-            reconstruction = reconstruction.transpose(1,2,0)
-
-        elif 'flow2d' in fname:
-            # check if there are only 3 dimensions, meaning the there are only 1 time frame at inference time
-            if len(reconstruction.shape)==3:
-                reconstruction = np.expand_dims(reconstruction, axis=0)
             
-            # swap back the first two dimensions to get the original shape
-            reconstruction = reconstruction.transpose(1,0,2,3)
-
-            reconstruction = reconstruction.transpose(2,3,1,0)
-
+        if is_3d:
+            econstruction = reconstruction.transpose(1,2,0)
         else:
             reconstruction = reconstruction.transpose(2,3,1,0)
 
