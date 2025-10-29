@@ -160,30 +160,41 @@ def save_reconstructions_mp(reconstructions: Dict[str, np.ndarray], out_dir: Pat
 
 def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat: bool = False):
     """
-    Saves a 4D reconstruction from a model to an h5 or mat file.
+    Saves a reconstruction from a model to an h5 or mat file.
 
     Args:
-        reconstruction_4d (torch.Tensor): A 4D tensor with shape [time, slices, height, width].
+        reconstruction_4d (torch.Tensor): A tensor with shape [time, slices, height, width] or [slices, height, width].
         fname (str): The original filename, used to create the output filename.
         out_dir (pathlib.Path): Path to the output directory.
-        is_mat (bool): If True, save as MATLAB .mat with key 'img4ranking' in [sx,sy,sz,t] (or 2D/3D for T1w/T2w/BlackBlood). Otherwise save HDF5 with dataset 'reconstruction'.
+        is_mat (bool): If True, save as MATLAB .mat with key 'img4ranking'.
+            Shapes:
+              - input 4D [t, z, h, w] -> saves [h, w, z, t] (or [h, w, z] for T1w/T2w/BlackBlood)
+              - input 3D [z, h, w]    -> saves [h, w, z]
+              - input 2D [h, w]       -> saves [h, w]
+            Otherwise save HDF5 with dataset 'reconstruction'.
     """
     if is_mat:
         reconstruction = reconstruction_4d.cpu().numpy()
 
-        # T1w/T2w/BlackBlood: drop time dimension, save [sx,sy,sz] where sz may be 1
-        if ('T1w' in fname) or ('T2w' in fname) or ('BlackBlood' in fname):
-            # [t, z, h, w] -> use first time frame [z, h, w] then [h, w, z]
-            reconstruction = reconstruction[0, ...]
+        # Handle both 3D and 4D inputs robustly
+        if reconstruction.ndim == 4:  # [t, z, h, w]
+            if ('T1w' in fname) or ('T2w' in fname) or ('BlackBlood' in fname):
+                # take first time frame -> [z, h, w] then to [h, w, z]
+                reconstruction = reconstruction[0, ...]
+                reconstruction = reconstruction.transpose(1, 2, 0)
+            else:
+                # [t, z, h, w] -> [h, w, z, t]
+                reconstruction = reconstruction.transpose(2, 3, 1, 0)
+        elif reconstruction.ndim == 3:  # [z, h, w] -> [h, w, z]
             reconstruction = reconstruction.transpose(1, 2, 0)
+        elif reconstruction.ndim == 2:  # [h, w] keep
+            reconstruction = reconstruction
         else:
-            # [t, z, h, w] -> [h, w, z, t]
-            reconstruction = reconstruction.transpose(2, 3, 1, 0)
+            raise ValueError(f"Unsupported reconstruction ndim={reconstruction.ndim} for MAT saving")
 
         mat_dict = {"img4ranking": reconstruction}
         out_fname = str(out_dir / fname)
-        if "UnderSample_Task" in out_fname:
-            out_fname = out_fname.replace("UnderSample_Task", "Task")
+        # Keep original directory naming (e.g., UnderSample_TaskS1) without replacement
         os.makedirs(os.path.dirname(out_fname), exist_ok=True)
         sio.savemat(out_fname, mat_dict, do_compression=True)
     else:

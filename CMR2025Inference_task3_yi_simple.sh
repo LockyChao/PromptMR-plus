@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=100G
 #SBATCH --time=512:00:00
-#SBATCH --gres=gpu:l40s:1
+#SBATCH --gres=gpu:l40s:2
 #SBATCH --exclude=esplhpc-cp080
 #SBATCH --output=/common/lidxxlab/cmrchallenge/task3/logs/cmr_inference_task3_yi_simple_%j.out
 #SBATCH --error=/common/lidxxlab/cmrchallenge/task3/logs/cmr_inference_task3_yi_simple_%j.err

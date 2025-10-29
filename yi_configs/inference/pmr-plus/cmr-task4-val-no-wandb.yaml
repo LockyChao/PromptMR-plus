@@ -4,6 +4,7 @@
 # ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/4011nm3j/checkpoints/best-epochepoch=10-valvalidation_loss=0.0129.ckpt
 # ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune2/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/bosarbui/checkpoints/best-epochepoch=01-valvalidation_loss=0.0128.ckpt
 ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune2/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/bosarbui/checkpoints/best-epochepoch=00-valvalidation_loss=0.0130.ckpt
+# ckpt_path: /common/lidxxlab/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune5/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/kuhlyn3f/checkpoints/best-epochepoch=00-valvalidation_loss=0.0138.ckpt
 
 data:
   class_path: pl_modules.InferenceDataModule
@@ -52,7 +53,7 @@ trainer:
   callbacks:
     - class_path: __main__.CustomWriter
       init_args:
-        output_dir: /common/lidxxlab/cmrchallenge/task3/output/inference_results_baseline3Tfinetune0epoch_7slice
+        output_dir: /common/lidxxlab/cmrchallenge/task3/output/inference_results_baseline3Tfinetune_second_0epoch_7slice
         write_interval: batch_and_epoch
         
 
