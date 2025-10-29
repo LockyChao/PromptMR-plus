@@ -173,7 +173,7 @@ def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False, is_3d=
 
             
         if is_3d:
-            econstruction = reconstruction.transpose(1,2,0)
+            reconstruction = reconstruction.transpose(1,2,0)
         else:
             reconstruction = reconstruction.transpose(2,3,1,0)
 
