@@ -9,3 +9,4 @@ reconstructions0717/
 *.png
 exp/
 lightning_logs/
+*.ckpt

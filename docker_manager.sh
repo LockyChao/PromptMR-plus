@@ -10,8 +10,8 @@ PROJECT_ID="syn68754167"
 TAG="latest"
 INPUT_DIR=""
 OUTPUT_DIR=""
-TASK="task-r2"
-CKPT="$HOME/HPC-LIDXXLAB/Yi/training_results_folder/multi_dataset_training_dataset_specific/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/dod22k1j/checkpoints/best-epochepoch=08-valvalidation_loss=0.0143.ckpt"
+TASK="task-s2"
+CKPT="$HOME/HPC-LIDXXLAB/Yi/training_results_folder/multi_dataset_training_kloss/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/or7cz3q3/checkpoints/best-epochepoch=04-valvalidation_loss=0.0165.ckpt"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -28,7 +28,7 @@ print_usage() {
     echo "Options:"
     echo "  --project-id <ID>     Synapse project ID (required for build)"
     echo "  --tag <TAG>           Docker image tag (default: latest)"
-    echo "  --task <TASK>         Task name (default: task-r2)"
+    echo "  --task <TASK>         Task name (default: task-s2)"
     echo "  --ckpt <PATH>         Checkpoint file used for building"
     echo "  --input <DIR>         Input directory for run (required for run)"
     echo "  --output <DIR>        Output directory for run (required for run)"
@@ -58,6 +58,10 @@ build_docker() {
         CONFIG_FILE="configs/inference/pmr-plus/cmr25-task1-docker.yaml"
     elif [ "$TASK" == "task-r2" ]; then
         CONFIG_FILE="configs/inference/pmr-plus/cmr25-task2-docker.yaml"
+    elif [ "$TASK" == "task-s1" ]; then
+        CONFIG_FILE="configs/inference/pmr-plus/cmr25-tasks1-docker.yaml"
+    elif [ "$TASK" == "task-s2" ]; then
+        CONFIG_FILE="configs/inference/pmr-plus/cmr25-tasks2-docker.yaml"
     else
         echo -e "${RED}Error: Invalid task: ${TASK}${NC}"
         exit 1
@@ -104,18 +108,18 @@ run_docker() {
     echo -e "${YELLOW}Output: ${OUTPUT_DIR}${NC}"
     echo -e "${YELLOW}Image:  ${image_name}${NC}"
     
-    # Use CUDA_VISIBLE_DEVICES if set, otherwise use all GPUs
+    # Always use all GPUs, but CUDA_VISIBLE_DEVICES will limit visibility inside container
+    GPU_ARG="--gpus all"
     if [ -n "${CUDA_VISIBLE_DEVICES}" ]; then
-        GPU_ARG="--gpus device=${CUDA_VISIBLE_DEVICES}"
-        echo -e "${YELLOW}Using GPUs: ${CUDA_VISIBLE_DEVICES}${NC}"
+        echo -e "${YELLOW}Using GPUs: ${CUDA_VISIBLE_DEVICES} (via CUDA_VISIBLE_DEVICES)${NC}"
     else
-        GPU_ARG="--gpus all"
         echo -e "${YELLOW}Using all available GPUs${NC}"
     fi
     
     docker run -it --rm \
         --shm-size=16g \
         ${GPU_ARG} \
+        -e CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES}" \
         -v "${INPUT_DIR}:/input" \
         -v "${OUTPUT_DIR}:/output" \
         "${image_name}"
