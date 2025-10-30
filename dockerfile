@@ -19,6 +19,8 @@ RUN pip3 install -r /app/requirements.txt
 ## Copy the rest of the application files
 COPY . /app
 
+RUN chmod 777 /app/last.ckpt
+
 
 # Define build argument with default value
 ARG CONFIG_FILE=configs/inference/pmr-plus/cmr25-task2-docker.yaml
