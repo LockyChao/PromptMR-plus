@@ -10,3 +10,4 @@ reconstructions0717/
 exp/
 lightning_logs/
 *.ckpt
+*.tar
