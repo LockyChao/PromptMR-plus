@@ -177,7 +177,7 @@ class CustomWriter(BasePredictionWriter):
                 })
                 
         # Directory for saving the final volumes
-        save_dir = self.output_dir / "TaskS2/MultiCoil"
+        save_dir = self.output_dir
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # --- FIX #1: This entire block replaces your old "Sort and Stack" logic ---
