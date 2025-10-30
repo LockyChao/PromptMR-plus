@@ -11,7 +11,7 @@ TAG="latest"
 INPUT_DIR=""
 OUTPUT_DIR=""
 TASK="task-s1"
-CKPT="$HOME/HPC-LIDXXLAB/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune3/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/vvihtxwt/checkpoints/best-epochepoch=01-valvalidation_loss=0.0132.ckpt"
+CKPT="$HOME/HPC-LIDXXLAB/cmrchallenge/task3/PromptMR-plus-Task4_kloss/multi_dataset_training_3T_finetune2/promptmr-plus/CMR2024_2025_dataset_specific/cmr2024_2025_phased/bosarbui/checkpoints/best-epochepoch=00-valvalidation_loss=0.0130.ckpt"
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
