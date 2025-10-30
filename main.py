@@ -213,7 +213,9 @@ class CustomWriter(BasePredictionWriter):
 
                 # f. Check if we need to remove fake time dimension 
                 # Env toggle: save real MATLAB .mat files if requested
-                save_as_mat = str(os.getenv("CMR_SAVE_AS_MAT", "0")).lower() in {"1", "true", "yes", "y"}
+                # 
+                
+                save_as_mat = True
 
                 if has_fake_time_dim and num_time_frames == 2:
                     # Original data was 4D, fake time dimension was added, remove it
