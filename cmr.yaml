@@ -1,20 +1,16 @@
 name: cmr
 channels:
-  - defaults
-  - conda-forge
   - anaconda
+  - defaults
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
-  - asyncssh=2.21.0=pyhd8ed1ab_0
   - bzip2=1.0.8=h5eee18b_6
   - c-ares=1.19.1=h5eee18b_0
-  - ca-certificates=2025.4.26=hbd8a1cb_0
-  - cffi=1.17.1=py312h1fdaa30_1
+  - ca-certificates=2025.2.25=h06a4308_0
   - curl=7.88.1=hdbd6064_2
-  - decorator=5.2.1=pyhd8ed1ab_0
   - expat=2.6.4=h6a678d5_0
   - gettext=0.21.0=hedfda30_2
   - git=2.45.2=pl5340h9abc3c3_1
@@ -37,16 +33,11 @@ dependencies:
   - pcre2=10.42=hebb0a14_1
   - perl=5.38.2=0_h5eee18b_perl5
   - pip=25.0=py312h06a4308_0
-  - pycparser=2.22=pyh29332c3_1
-  - pyopenssl=25.0.0=pyhd8ed1ab_0
   - python=3.12.9=h5148396_0
-  - python-gssapi=1.8.3=py312h5eee18b_1
   - readline=8.2=h5eee18b_0
   - setuptools=75.8.0=py312h06a4308_0
   - sqlite=3.45.3=h5eee18b_0
-  - sshfs=2025.2.0=pyhd8ed1ab_0
   - tk=8.6.14=h39e8969_0
-  - typing_extensions=4.13.2=pyh29332c3_0
   - wheel=0.45.1=py312h06a4308_0
   - xz=5.6.4=h5eee18b_1
   - zlib=1.2.13=h5eee18b_1
@@ -66,15 +57,19 @@ dependencies:
       - attrs==25.3.0
       - babel==2.17.0
       - beautifulsoup4==4.13.3
+      - biopython==1.85
       - bleach==6.2.0
       - certifi==2025.1.31
+      - cffi==1.17.1
       - charset-normalizer==3.4.1
+      - clarabel==0.10.0
       - click==8.1.8
       - comm==0.2.2
       - contourpy==1.3.1
-      - cryptography==44.0.3
+      - cvxpy==1.6.5
       - cycler==0.12.1
       - debugpy==1.8.13
+      - decorator==5.2.1
       - defusedxml==0.7.1
       - deprecated==1.2.18
       - docker-pycreds==0.4.0
@@ -82,6 +77,7 @@ dependencies:
       - einops==0.8.1
       - executing==2.2.0
       - fastjsonschema==2.21.1
+      - fastmri==0.3.0
       - filelock==3.18.0
       - fonttools==4.56.0
       - fqdn==1.5.1
@@ -93,6 +89,7 @@ dependencies:
       - grpcio==1.71.0
       - h11==0.14.0
       - h5py==3.13.0
+      - hdf5storage==0.1.19
       - httpcore==1.0.7
       - httpx==0.27.2
       - huggingface-hub==0.29.3
@@ -126,14 +123,17 @@ dependencies:
       - jupyterlab-server==2.27.3
       - jupyterlab-widgets==3.0.13
       - kiwisolver==1.4.8
+      - laml==0.0.4
       - lazy-loader==0.4
       - lightning==2.5.1
       - lightning-utilities==0.14.2
+      - lxml==5.3.2
       - markdown==3.7
       - markupsafe==3.0.2
       - matplotlib==3.10.1
       - matplotlib-inline==0.1.7
       - mistune==3.1.3
+      - mosek==11.0.16
       - mpmath==1.3.0
       - multidict==6.2.0
       - nbclient==0.10.2
@@ -170,6 +170,7 @@ dependencies:
       - opentelemetry-sdk==1.31.0
       - opentelemetry-semantic-conventions==0.52b0
       - opentelemetry-util-http==0.52b0
+      - osqp==1.0.3
       - overrides==7.7.0
       - packaging==24.2
       - pandas==2.2.3
@@ -185,6 +186,7 @@ dependencies:
       - psutil==5.9.8
       - ptyprocess==0.7.0
       - pure-eval==0.2.3
+      - pycparser==2.22
       - pydantic==2.10.6
       - pydantic-core==2.27.2
       - pygments==2.19.1
@@ -201,11 +203,12 @@ dependencies:
       - rfc3339-validator==0.1.4
       - rfc3986-validator==0.1.1
       - rpds-py==0.24.0
+      - runstats==2.0.0
       - safetensors==0.5.3
       - scikit-image==0.25.2
       - scikit-learn==1.6.1
       - scipy==1.15.2
-      - seaborn==0.13.2
+      - scs==3.2.7.post2
       - send2trash==1.8.3
       - sentry-sdk==2.23.1
       - setproctitle==1.3.5
@@ -224,11 +227,14 @@ dependencies:
       - timm==1.0.15
       - tinycss2==1.4.0
       - torch==2.6.0
+      - torchinfo==1.8.0
       - torchmetrics==1.7.0
+      - torchsummary==1.5.1
       - torchvision==0.21.0
       - tornado==6.4.2
       - tqdm==4.67.1
       - traitlets==5.14.3
+      - treeswift==1.1.45
       - triton==3.2.0
       - types-python-dateutil==2.9.0.20241206
       - typeshed-client==2.7.0
@@ -246,4 +252,4 @@ dependencies:
       - wrapt==1.17.2
       - yarl==1.18.3
       - zipp==3.21.0
-prefix: /home/wuc4/miniconda3/envs/cmr
+prefix: /home/shenc2/miniconda3/envs/cmr

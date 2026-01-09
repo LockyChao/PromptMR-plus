@@ -22,6 +22,10 @@ def to_tensor(data: np.ndarray) -> torch.Tensor:
     if np.iscomplexobj(data):
         data = np.stack((data.real, data.imag), axis=-1)
 
+    # Ensure data is float32 to match model weights
+    if data.dtype != np.float32:
+        data = data.astype(np.float32)
+    
     return torch.from_numpy(data)
 
 def apply_mask(
@@ -264,6 +268,7 @@ class PromptMRSample(NamedTuple):
         mask_type: The type of mask used.
         num_t: number of temporal frames in the original volume. Only used for CmrxRecon data.
         num_slc: number of slices in the original volume. Only used for CmrxRecon data.
+        has_fake_time_dim: flag indicating if this data has a fake time dimension that should be removed during saving.
     """
 
     masked_kspace: torch.Tensor
@@ -277,6 +282,7 @@ class PromptMRSample(NamedTuple):
     mask_type: str
     num_t: int
     num_slc: int
+    has_fake_time_dim: bool
     
 class CmrxReconDataTransform:
     """
@@ -374,7 +380,8 @@ class CmrxReconDataTransform:
             crop_size=crop_size,
             mask_type=mask_type,
             num_t=num_t,
-            num_slc=num_slc
+            num_slc=num_slc,
+            has_fake_time_dim=attrs.get('has_fake_time_dim', False)
             # attrs=attrs,
         )
 

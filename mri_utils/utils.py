@@ -7,6 +7,8 @@ LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
 from typing import Dict, Optional
+import os
+import scipy.io as sio
 
 import scipy
 import h5py
@@ -156,38 +158,42 @@ def save_reconstructions_mp(reconstructions: Dict[str, np.ndarray], out_dir: Pat
 #             hf.create_dataset('reconstruction', data=recons)
             
 
-def save_reconstructions(reconstruction_4d, fname, out_dir):
+def save_reconstructions(reconstruction_4d, fname, out_dir, is_mat=False, is_3d=False):
     """
-    Saves a 4D reconstruction from a model to an h5 file.
+    Saves a 4D reconstruction from a model to an h5 or mat file.
 
     Args:
         reconstruction_4d (torch.Tensor): A 4D tensor with shape [time, slices, height, width].
         fname (str): The original filename, used to create the output filename.
         out_dir (pathlib.Path): Path to the output directory.
     """
-    out_fname = out_dir / fname
-    out_fname.parent.mkdir(parents=True, exist_ok=True)
-    with h5py.File(out_fname, "w") as hf:
-        # Save the tensor as a numpy array
-        hf.create_dataset("reconstruction", data=reconstruction_4d.cpu().numpy())
 
-def save_cascades(cascades, fname, out_dir):
-    """
-    Saves a 5D cascades from a model to an h5 file.
+    if is_mat:
+        reconstruction = reconstruction_4d.cpu().numpy()
 
-    Args:
-        cascades (torch.Tensor): A 5D tensor with shape [cascades, time, slices, height, width].
-        fname (str): The original filename, used to create the output filename.
-        out_dir (pathlib.Path): Path to the output directory.
-    
-    """
-    
-    out_fname = out_dir / fname
-    out_fname.parent.mkdir(parents=True, exist_ok=True)
-    with h5py.File(out_fname, "w") as hf:
-        # Save the tensor as a numpy array
-        hf.create_dataset("cascades", data=cascades.cpu().numpy())
-        
+            
+        if is_3d:
+            reconstruction = reconstruction.transpose(1,2,0)
+        else:
+            reconstruction = reconstruction.transpose(2,3,1,0)
+
+
+        mat_dict = {"img4ranking": reconstruction}
+        out_fname = str(out_dir / fname)
+
+        if 'UnderSample_Task' in out_fname:
+            out_fname = out_fname.replace('UnderSample_Task', 'Task')
+
+        os.makedirs(os.path.dirname(out_fname), exist_ok=True)  # Create parent directories
+        sio.savemat(str(out_fname), mat_dict)  # Convert PosixPath to string
+    else:
+        out_fname = out_dir / fname
+        out_fname.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(out_fname, "w") as hf:
+            # Save the tensor as a numpy array
+            hf.create_dataset("reconstruction", data=reconstruction_4d.cpu().numpy())
+
+
 def loadmat_group(group):
     """
     Load a group in Matlab v7.3 format .mat file using h5py.

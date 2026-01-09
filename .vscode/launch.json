@@ -1,44 +1,39 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
-        {
-            "name": "Python Debugger: Current File",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "PromptMRI Inference",
-            "type": "debugpy",
-            "request": "launch",
-            "postDebugTask": "closeTerminal",
-            "program": "main.py",
-            "args": [
-                "predict",
-                "--config", "configs/inference/pmr-plus/cmr25-task2-val-saveitr.yaml"
-            ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
-            },
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Process Excel and Add Info - TaskR2",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "scripts/process_excel_and_add_info.py",
-            "postDebugTask": "closeTerminal",
-            "args": [
-                "-b", "${env:LID}/cmrchallenge/code/Inference/Inf_0811_epoch9_processed/TaskR2/MultiCoil",
-                "-i", "${env:LID}/Junzhou/result_TaskR2_4.xlsx",
-                "-o", "TaskR2_more_info.xlsx"
-            ],
-            "console": "integratedTerminal"
-        }
+      {
+        "name"   : "Python Debugger: Current File",
+        "type"   : "debugpy",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal"
+      },
+      {
+      "name": "PromptMRI Train",
+        "type": "debugpy",
+        "request": "launch",
+        "postDebugTask": "closeTerminal",
+        "program": "main.py",
+        "args": [
+          "fit",
+          "--config",
+          "configs/train/pmr-plus/cmr25-cardiac-task3_30to15.yaml"
+        ],
+        "env": {"CUDA_VISIBLE_DEVICES": "1"},
+        "console": "integratedTerminal"
+      },
+      {
+      "name": "PromptMRI Predict - CMR Task4",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "main.py",
+        "args": [
+          "predict",
+          "--config",
+          "configs/inference/pmr-plus/cmr-task4-val.yaml"
+        ],
+        "env": {"CUDA_VISIBLE_DEVICES": "4"},
+        "console": "integratedTerminal"
+      }
     ]
-}
+  }

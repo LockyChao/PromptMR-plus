@@ -144,10 +144,10 @@ def save_image_slice(slice_2d, full_path):
 #root_directory = '/common/lidxxlab/cmrchallenge/code/Inference/predict/cmr25validation/TaskR2_legacy_cropped/reconstructions'
 #root_directory = '/common/lidxxlab/cmrchallenge/code/Inference/predict/cmr25validation/task2/reconstructions/T2w/ValidationSet/UnderSample_TaskR2'
 #root_directory = '/common/lidxxlab/cmrchallenge/code/Inference/predict/cmr25validation/Submission_0601/TaskR2/MultiCoil/Perfusion/ValidationSet/UnderSample_TaskR2'
-root_directory= '/common/lidxxlab/chushu/PromptMR-plus/output_chushu/Inference_test/reconstructions/T2w/ValidationSet/UnderSample_TaskR2'
+root_directory= '/common/lidxxlab/chushu/PromptMR-plus/output_chushu/Inference_test/reconstructions/T1w/ValidationSet/UnderSample_TaskR2'
 #root_directory= '/common/lidxxlab/cmrchallenge/code/Inference/predict/test_weighted/reconstructions/T1w/ValidationSet/UnderSample_TaskR2'
 # 2. SET THE MAIN OUTPUT FOLDER
-main_output_folder = 'output_chushu/Inference_test/reconstruction_png_new/T2w'
+main_output_folder = 'output_chushu/Inference_test/reconstruction_png_new/T1w'
 
 # 3. LOAD ALL DATA
 all_mat_data = load_mat_files_from_directory(root_directory)

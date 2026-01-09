@@ -392,20 +392,26 @@ class PromptMR(nn.Module):
             
 
         # get central slice of rss as final output
+        current_kspace = sens_expand(img_pred, sens_maps, self.num_adj_slices) #multicoil kspace
         img_pred = torch.chunk(img_pred, self.num_adj_slices, dim=1)[self.center_slice]
+        pred_kspace = torch.chunk(current_kspace, self.num_adj_slices, dim=1)[self.center_slice]#predicted multi-coil kspace
         sens_maps = torch.chunk(sens_maps, self.num_adj_slices, dim=1)[self.center_slice]
-        img_pred = rss(complex_abs(complex_mul(img_pred, sens_maps)), dim=1)
+        img_pred = rss(complex_abs(complex_mul(img_pred, sens_maps)), dim=1) #coil combined image
             
         # prepare for additional output
+        kspace_zf = masked_kspace
         img_zf = torch.chunk(masked_kspace, self.num_adj_slices, dim=1)[self.center_slice]
+        kspace_zf = torch.chunk(masked_kspace, self.num_adj_slices, dim=1)[self.center_slice]#original multi-coil kspace
         img_zf = rss(complex_abs(ifft2c(img_zf)), dim=1)
+
         sens_maps = torch.view_as_complex(sens_maps)
 
         return {
             'img_pred': img_pred,
             'img_zf': img_zf,
             'sens_maps': sens_maps,
-            'im_pred_cascades': im_pred_cascades
+            'pred_kspace': pred_kspace,
+            'original_kspace': kspace_zf 
         }
 
 

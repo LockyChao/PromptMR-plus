@@ -672,14 +672,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         volume_paths = [p for p in all_paths if not p.name.startswith('._')]
         #print('volume_paths:',volume_paths)
 
-        if '2023' in str(self.root):
-            self.year = 2023 
-        elif '2024' in str(self.root):
-            self.year = 2024
-        elif '2025' in str(self.root):
-            self.year = 2025
-        else:
-            raise ValueError('Invalid dataset root')
+        self.year = 2025
         #
         if self.year == 2023:
             # filter out files contains '_mask.mat'
@@ -776,6 +769,9 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
         Load the k-space volume and mask for the given path.
         """
         kspace_volume = load_kdata(path)
+        
+        # Initialize fake time dimension flag
+        has_fake_time_dim = False
 
         if len(kspace_volume.shape) == 3:
             # (Z, H, W) → (1, 1, Z, H, W)
@@ -786,6 +782,8 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             # ── Duplicate the fake time dimension to size 2 (maybe)──
             kspace_volume = np.stack([kspace_volume,kspace_volume])  # modified by chushu
             print('deplicated kspace:',kspace_volume.shape)
+            # Mark that this data has a fake time dimension
+            has_fake_time_dim = True
             # Shape is now (C, 1, Z, H, W) → repeat along axis=1
             # kspace_volume = np.repeat(kspace_volume, repeats=2, axis=1)
         elif len(kspace_volume.shape) == 5:
@@ -849,6 +847,7 @@ class CmrxReconInferenceSliceDataset(torch.utils.data.Dataset):
             'padding_left': 0,
             'padding_right': kspace_volume.shape[-1],
             'recon_size': [kspace_volume.shape[3], kspace_volume.shape[4], 1],
+            'has_fake_time_dim': has_fake_time_dim,  # Add flag for tracking fake time dimension
         }
         return kspace_volume, mask, attrs
     

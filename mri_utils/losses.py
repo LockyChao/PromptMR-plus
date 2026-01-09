@@ -62,3 +62,11 @@ class SSIMLoss(nn.Module):
             return 1 - S.mean()
         else:
             return 1 - S
+
+class normalized_l1_loss(nn.Module):
+    def __init__(self):
+        super(normalized_l1_loss, self).__init__()
+
+    def forward(self, x, y):
+        loss = torch.norm(y - x, 1) / torch.norm(x.detach(), 1)
+        return loss

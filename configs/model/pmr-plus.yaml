@@ -2,7 +2,7 @@
 model:
   class_path: pl_modules.PromptMrModule
   init_args:
-    num_cascades: 12
+    num_cascades: 16
     num_adj_slices: 5
     n_feat0: 48
     feature_dim: [72,96,120]
@@ -20,7 +20,7 @@ model:
     learnable_prompt: false
     adaptive_input: true
     n_buffer: 4
-    n_history: 11
+    n_history: 15
     use_sens_adj: true
     lr_gamma: 0.1
     weight_decay: 1e-2

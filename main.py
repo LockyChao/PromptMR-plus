@@ -13,6 +13,7 @@ import numpy as np
 
 from lightning.pytorch.cli import LightningCLI, SaveConfigCallback
 from lightning.pytorch.callbacks import BasePredictionWriter
+from types import SimpleNamespace
 
 from mri_utils import save_reconstructions, save_cascades
 from pl_modules import PromptMrModule
@@ -127,10 +128,12 @@ class CustomWriter(BasePredictionWriter):
     A custom prediction writer to save reconstructions to disk.
     """
 
-    def __init__(self, output_dir: Path, write_interval):
+    def __init__(self, output_dir: Path, write_interval, save_masked_kspace: bool = False, masked_kspace_output_dir: str = None):
         super().__init__(write_interval)
         self.output_dir = output_dir
         self.outputs = defaultdict(list)
+        self.save_masked_kspace = save_masked_kspace
+        self.masked_kspace_output_dir = Path(masked_kspace_output_dir) if masked_kspace_output_dir else None
         
     def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx):
         """
@@ -139,119 +142,29 @@ class CustomWriter(BasePredictionWriter):
         """
         pass
     
-# In your CustomWriter class in main.py
-    # def write_on_epoch_end_modified(self, trainer, pl_module, predictions, batch_indices):
-    #     # This distributed gathering logic is correct and unchanged
-    #     if torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1:
-    #         gathered = [None] * torch.distributed.get_world_size()
-    #         torch.distributed.all_gather_object(gathered, predictions)
-    #         if not trainer.is_global_zero:
-    #             return
-    #         predictions = [item for sublist in gathered for item in sublist]
-    #     else:
-    #         # Handle the case of a single list of batches if not distributed
-    #         predictions = predictions[0]
-
-    #     # --- CHANGE 1: Make `outputs` a nested dictionary ---
-    #     outputs = defaultdict(lambda: defaultdict(list))
-    #     num_slc_dict = {}
-
-    #     # Iterate through batches
-    #     for batch_predictions in predictions:
-    #         print('batch predictions:', batch_predictions)
-    #         for i in range(len(batch_predictions["fname"])):
-    #             fname = batch_predictions["fname"][i]
-    #             slice_num = int(batch_predictions["slice_num"][i])
-    #             output = batch_predictions["output"][i:i+1]
-                
-    #             # --- CHANGE 2: Get the time index and use it for grouping ---
-    #             time_idx = int(batch_predictions["time_frame"][i])
-    #             outputs[fname][time_idx].append((slice_num, output))
-
-    #             # This logic for num_slc remains the same
-    #             num_slc = batch_predictions["num_slc"][i].numpy()
-    #             if fname not in num_slc_dict and num_slc != -1:
-    #                 num_slc_dict[fname] = batch_predictions["num_slc"][i]
-
-    #     # --- CHANGE 3: Assemble into final volumes before saving ---
-    #     final_volumes = {}
-    #     for fname, time_frames in outputs.items():
-    #         all_time_volumes = []
-    #         # Loop through each time frame for the current file
-    #         for t_idx in sorted(time_frames.keys()):
-    #             # Sort the slices for the current time frame
-    #             sorted_slices = sorted(time_frames[t_idx], key=lambda x: x[0])
-    #             # Stack the slices for this time frame into a 3D volume
-    #             volume_3d = np.concatenate([out.cpu().numpy() for _, out in sorted_slices])
-    #             all_time_volumes.append(volume_3d)
-            
-    #         # Stack the 3D time volumes into a final 4D volume
-    #         if all_time_volumes:
-    #             final_volumes[fname] = np.stack(all_time_volumes)
-
-    #     # This original call to your saving function now works with the corrected volumes
-    #     # Note: Ensure save_reconstructions expects a dictionary of NumPy arrays.
-    #     save_reconstructions(final_volumes, num_slc_dict, self.output_dir / "reconstructions")
-    #     print(f"Done! Reconstructions saved to {self.output_dir / 'reconstructions'}")
-            
-    # def write_on_epoch_end_org(self, trainer, pl_module, predictions, batch_indices):
-
-    #     gathered = [None] * torch.distributed.get_world_size()
-    #     gathered_indices = [None] * torch.distributed.get_world_size()
-    #     torch.distributed.all_gather_object(gathered, predictions)
-    #     torch.distributed.all_gather_object(gathered_indices, batch_indices)
-    #     torch.distributed.barrier()
-    #     if not trainer.is_global_zero:
-    #         return
-    #     predictions = sum(gathered, [])
-    #     batch_indices = sum(gathered_indices, [])
-    #     batch_indices = list(chain.from_iterable(batch_indices))
-    #     outputs = defaultdict(list)
-    #     num_slc_dict = {} # for reshape
-    #     # Iterate through batches
-    #     for batch_predictions in predictions:
-    #         print('batch predictions:',batch_predictions)
-    #         for i in range(len(batch_predictions["fname"])): 
-    #             fname = batch_predictions["fname"][i]
-    #             slice_num = int(batch_predictions["slice_num"][i])
-    #             output = batch_predictions["output"][i:i+1]
-    #             outputs[fname].append((slice_num, output))
-    #             # if num_slc_list[fname] exist, assign
-    #             num_slc = batch_predictions["num_slc"][i].numpy()
-    #             if fname not in num_slc_dict and num_slc!=-1:
-    #                 num_slc_dict[fname] = batch_predictions["num_slc"][i]
-        
-    #     # Sort slices and stack them into volumes
-    #     for fname in outputs:
-    #        # outputs[fname] = np.concatenate(
-    #         #    [out.cpu() for _, out in sorted(outputs[fname])])
-    #         #outputs[fname] = np.concatenate(
-    #           #   [out.cpu() for _, out in sorted(outputs[fname], key=lambda x: x[0].item())]) #chushu modify
-    #         outputs[fname] = np.concatenate(
-    #             [out.cpu() for _, out in sorted(outputs[fname], key=lambda x: x[0].item() if isinstance(x[0], torch.Tensor) else x[0])])
-
-    #     # # Save the reconstructions
-    #     save_reconstructions(outputs, num_slc_dict, self.output_dir / "reconstructions")
-    #     print(f"Done! Reconstructions saved to {self.output_dir / 'reconstructions'}")
-
     # In main.py
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):
         # --- This distributed gathering logic is from your code ---
         if torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1:
             gathered = [None] * torch.distributed.get_world_size()
             torch.distributed.all_gather_object(gathered, predictions)
+            torch.distributed.barrier()  # 添加barrier确保同步
             if not trainer.is_global_zero:
                 return
             # This correctly flattens the list of lists from all GPUs
             predictions = [item for sublist in gathered for item in sublist]
         else:
-            # In non-distributed case, predictions might already be a list of batches
-            predictions = predictions if isinstance(predictions, list) else [predictions]
+            # single-GPU / no DDP: keep predictions as a flat list of dicts
+            # (if it ever comes in wrapped as a list-of-lists, unwrap one level)
+            if isinstance(predictions, list) and predictions and isinstance(predictions[0], list):
+                predictions = predictions[0]
+        
+        # 只在主进程执行保存
+        if not trainer.is_global_zero:
+            return
 
         # --- Grouping logic from your code, slightly modified ---
         outputs = defaultdict(list)
-        
-        save_itr = pl_module.save_itr
 
         for batch_output in predictions:
             # Loop through items in the batch (handles batch_size > 1)
@@ -262,24 +175,22 @@ class CustomWriter(BasePredictionWriter):
                     fname = fname[0]
                 
                 # Store the entire dictionary for this slice
-                if save_itr:
-                    outputs[fname].append({
-                        "slice_num": batch_output["slice_num"][i],
-                        "time_frame": batch_output["time_frame"][i],
-                        "num_slc": batch_output["num_slc"][i],
-                        "output": batch_output["output"][i],
-                        "im_pred_cascades": batch_output["im_pred_cascades"][i]
-                    })
-                else:
-                    outputs[fname].append({
-                        "slice_num": batch_output["slice_num"][i],
-                        "time_frame": batch_output["time_frame"][i],
-                        "num_slc": batch_output["num_slc"][i],
-                        "output": batch_output["output"][i]
-                    })
+                outputs[fname].append({
+                    "slice_num": batch_output["slice_num"][i],
+                    "time_frame": batch_output["time_frame"][i],
+                    "num_slc": batch_output["num_slc"][i],
+                    "output": batch_output["output"][i],
+                    "has_fake_time_dim": batch_output["has_fake_time_dim"][i],
+                    "mask": batch_output.get("mask", [None])[i] if "mask" in batch_output else None,
+                    "mask_type": batch_output.get("mask_type", [None])[i] if "mask_type" in batch_output else None,
+                    "num_low_frequencies": batch_output.get("num_low_frequencies", [None])[i] if "num_low_frequencies" in batch_output else None,
+                    "masked_kspace": batch_output.get("masked_kspace", [None])[i] if "masked_kspace" in batch_output else None,
+                    "original_kspace": batch_output.get("kspace", [None])[i] if "kspace" in batch_output else None,
+                    "attrs": batch_output.get("attrs", [None])[i] if "attrs" in batch_output else None
+                })
                 
         # Directory for saving the final volumes
-        save_dir = self.output_dir / "reconstructions"
+        save_dir = self.output_dir 
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # --- FIX #1: This entire block replaces your old "Sort and Stack" logic ---
@@ -298,13 +209,24 @@ class CustomWriter(BasePredictionWriter):
                 # b. Stack all sorted slices into one tensor
                 stacked_volume = torch.stack([s['output'].squeeze() for s in sorted_slices])
                 
-                if save_itr:
-                    stacked_cascades = torch.stack([s['im_pred_cascades'].squeeze() for s in sorted_slices], dim=1)
-                    num_cascades = stacked_cascades.shape[0]
+                # b1. Stack masks if available
+                stacked_masks = None
+                if sorted_slices[0]['mask'] is not None:
+                    stacked_masks = torch.stack([s['mask'].squeeze() for s in sorted_slices])
+                
+                # b2. Stack masked k-space if available
+                stacked_masked_kspace = None
+                if sorted_slices[0]['masked_kspace'] is not None:
+                    stacked_masked_kspace = torch.stack([s['masked_kspace'].squeeze() for s in sorted_slices])
 
                 # c. Get the correct number of slices for THIS file from its own data
                 num_slices_per_time = sorted_slices[0]['num_slc'].item()
                 num_time_frames = len(sorted_slices) // num_slices_per_time
+                has_fake_time_dim = sorted_slices[0]['has_fake_time_dim']
+                
+                # c1. Collect mask metadata
+                mask_types = [s['mask_type'] for s in sorted_slices if s['mask_type'] is not None]
+                num_low_freqs = [s['num_low_frequencies'] for s in sorted_slices if s['num_low_frequencies'] is not None]
                 
                 # d. Final check to ensure data is consistent
                 if len(sorted_slices) % num_slices_per_time != 0:
@@ -315,27 +237,171 @@ class CustomWriter(BasePredictionWriter):
                 
                 # e. Reshape into the final 4D volume using the CORRECT dimensions
                 final_4d_volume = stacked_volume.view(num_time_frames, num_slices_per_time, h, w)
-                
-                if save_itr:
-                    stacked_cascades = stacked_cascades.view(num_cascades, num_time_frames, num_slices_per_time, h, w)
 
-                print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
-                # The save function is now much simpler
-                save_reconstructions(final_4d_volume, fname, save_dir)
+                # f. Check if we need to remove fake time dimension 
+                if has_fake_time_dim and num_time_frames == 2:
+                    # Original data was 4D, fake time dimension was added, remove it
+                    print(f"Removing fake time dimension for {fname}: {final_4d_volume.shape} -> 3D")
+                    # Take the first time frame and remove the time dimension
+                    final_volume = final_4d_volume[0]  # Shape: (num_slices_per_time, h, w)
+                    print(f"Saving 3D volume for {fname} with shape {final_volume.shape}")
+                    save_reconstructions(final_volume, fname, save_dir, is_mat=True, is_3d=True)
+                else:
+                    print(f"Saving 4D volume for {fname} with shape {final_4d_volume.shape}")
+                    # The save function is now much simpler
+                    save_reconstructions(final_4d_volume, fname, save_dir, is_mat=True)
                 
-                if save_itr:
-                    #strip extension name from fname
-                    extension = os.path.splitext(fname)[1]
-                    fname_no_ext = os.path.splitext(fname)[0]
-                    
-                    fname_cascades = fname_no_ext + "_cascades" + extension
-                    print(f"Saving {num_cascades} cascades for {fname_cascades} with shape {stacked_cascades.shape}")
-                    save_cascades(stacked_cascades, fname_cascades, save_dir)
+                # Save masked k-space and masks if enabled
+                if self.save_masked_kspace and stacked_masked_kspace is not None:
+                    self._save_masked_kspace_data(fname, sorted_slices, stacked_masked_kspace, stacked_masks, 
+                                                num_time_frames, num_slices_per_time, has_fake_time_dim)
 
             except Exception as e:
                 print(f"CRITICAL ERROR while processing/saving {fname}. Error: {e}")
                 
         print(f"Done! Reconstructions saved to {save_dir}")
+    
+    def _save_masked_kspace_data(self, fname, sorted_slices, stacked_masked_kspace, stacked_masks, 
+                                num_time_frames, num_slices_per_time, has_fake_time_dim):
+        """Save masked k-space and masks in the specified format"""
+        import scipy.io as sio
+        import os
+        
+        # Extract path components from fname
+        # Expected format: /path/to/Center010/UIH_30T_umr790/P060/lge_lax_4ch.mat
+        fname_parts = fname.split('/')
+        
+        # Find the base filename and extract components
+        base_fname = os.path.basename(fname)
+        name_without_ext = base_fname.replace('.mat', '')
+        
+        # Extract center, scanner, patient info from path
+        center_idx = -1
+        scanner_idx = -1
+        patient_idx = -1
+        
+        for i, part in enumerate(fname_parts):
+            if part.startswith('Center'):
+                center_idx = i
+            elif 'UIH' in part or 'Siemens' in part or 'GE' in part:
+                scanner_idx = i
+            elif part.startswith('P'):
+                patient_idx = i
+        
+        if center_idx == -1 or scanner_idx == -1 or patient_idx == -1:
+            print(f"Warning: Could not parse path components from {fname}")
+            return
+        
+        center = fname_parts[center_idx]
+        scanner = fname_parts[scanner_idx]
+        patient = fname_parts[patient_idx]
+        
+        # Get mask type and acceleration info from the first slice
+        mask_type = sorted_slices[0]['mask_type']
+        num_low_freq = sorted_slices[0]['num_low_frequencies']
+        
+        # Create mask type suffix
+        if mask_type == 'kt_uniform':
+            mask_suffix = f"ktUniform{num_low_freq}"
+        elif mask_type == 'kt_random':
+            mask_suffix = f"ktRandom{num_low_freq}"
+        elif mask_type == 'kt_radial':
+            mask_suffix = f"ktRadial{num_low_freq}"
+        elif mask_type == 'uniform':
+            mask_suffix = f"Uniform{num_low_freq}"
+        else:
+            mask_suffix = f"{mask_type}{num_low_freq}"
+        
+        # Create directory structure
+        if self.masked_kspace_output_dir is not None:
+            base_dir = self.masked_kspace_output_dir / "train_val/TaskS2/MultiCoil"
+        else:
+            # Default fallback path
+            base_dir = Path("/cmrchallenge/data/CMR2025/Validation/Task4/TaskS2/MultiCoil")
+        
+        # Determine sequence type from filename
+        if 'lge' in name_without_ext.lower():
+            sequence = 'LGE'
+        elif 'cine' in name_without_ext.lower():
+            sequence = 'CINE'
+        elif 't1' in name_without_ext.lower():
+            sequence = 'T1'
+        elif 't2' in name_without_ext.lower():
+            sequence = 'T2'
+        else:
+            sequence = 'OTHER'
+        
+        # Create paths
+        mask_dir = base_dir / sequence / "ValidationSet" / "Mask_TaskS2" / center / scanner / patient
+        kspace_dir = base_dir / sequence / "ValidationSet" / "UnderSample_TaskS2" / center / scanner / patient
+        
+        mask_dir.mkdir(parents=True, exist_ok=True)
+        kspace_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Reshape data to match validation inference format
+        # masked k-space: [Ny, Nx, Ncoil, Nz, Nt]
+        # mask: [Ny, Nx, Nt] or [Ny, Nx] for 2D
+        
+        # Get dimensions
+        if len(stacked_masked_kspace.shape) == 5:  # [batch, coil, height, width, 1]
+            _, n_coils, height, width, _ = stacked_masked_kspace.shape
+            stacked_masked_kspace = stacked_masked_kspace.squeeze(-1)  # Remove last dimension
+        else:
+            _, n_coils, height, width = stacked_masked_kspace.shape
+            
+        if len(stacked_masks.shape) == 4:  # [batch, height, width, 1]
+            _, mask_height, mask_width, _ = stacked_masks.shape
+            stacked_masks = stacked_masks.squeeze(-1)  # Remove last dimension
+        else:
+            _, mask_height, mask_width = stacked_masks.shape
+        
+        # Reshape to [num_time_frames, num_slices_per_time, ...]
+        final_masked_kspace = stacked_masked_kspace.view(num_time_frames, num_slices_per_time, n_coils, height, width)
+        final_masks = stacked_masks.view(num_time_frames, num_slices_per_time, mask_height, mask_width)
+        
+        # Remove fake time dimension if needed
+        if has_fake_time_dim and num_time_frames == 2:
+            final_masked_kspace = final_masked_kspace[0]  # [num_slices_per_time, n_coils, height, width]
+            final_masks = final_masks[0]  # [num_slices_per_time, mask_height, mask_width]
+        
+        # Convert to the expected format:
+        # masked k-space: [Ny, Nx, Ncoil, Nz, Nt] -> [height, width, n_coils, num_slices_per_time, num_time_frames]
+        # mask: [Ny, Nx, Nt] -> [mask_height, mask_width, num_time_frames] or [Ny, Nx] -> [mask_height, mask_width]
+        
+        if has_fake_time_dim and num_time_frames == 2:
+            # 3D case: [num_slices_per_time, n_coils, height, width] -> [height, width, n_coils, num_slices_per_time]
+            final_masked_kspace = final_masked_kspace.permute(2, 3, 1, 0)  # [height, width, n_coils, num_slices_per_time]
+            # 3D mask: [num_slices_per_time, mask_height, mask_width] -> [mask_height, mask_width] (2D mask)
+            final_masks = final_masks[0]  # Take first slice as representative mask
+        else:
+            # 4D case: [num_time_frames, num_slices_per_time, n_coils, height, width] -> [height, width, n_coils, num_slices_per_time, num_time_frames]
+            final_masked_kspace = final_masked_kspace.permute(3, 4, 2, 1, 0)  # [height, width, n_coils, num_slices_per_time, num_time_frames]
+            # 4D mask: [num_time_frames, num_slices_per_time, mask_height, mask_width] -> [mask_height, mask_width, num_time_frames]
+            final_masks = final_masks.permute(2, 3, 0)  # [mask_height, mask_width, num_time_frames]
+        
+        # Create filenames
+        mask_fname = f"{name_without_ext}_mask_{mask_suffix}.mat"
+        kspace_fname = f"{name_without_ext}_kus_{mask_suffix}.mat"
+        
+        # Save mask file
+        mask_path = mask_dir / mask_fname
+        sio.savemat(mask_path, {
+            'mask': final_masks.numpy(),
+            'mask_type': mask_type,
+            'num_low_frequencies': num_low_freq
+        })
+        print(f"Saved mask to {mask_path} with shape {final_masks.shape}")
+        
+        # Save masked k-space file
+        kspace_path = kspace_dir / kspace_fname
+        sio.savemat(kspace_path, {
+            'kus': final_masked_kspace.numpy(),  # Use 'kus' as the array name to match validation format
+            'mask_type': mask_type,
+            'num_low_frequencies': num_low_freq,
+            'acceleration': 4  # Default acceleration, could be extracted from mask
+        })
+        print(f"Saved masked k-space to {kspace_path} with shape {final_masked_kspace.shape}")
+
 
 class CustomLightningCLI(LightningCLI):
 
@@ -346,27 +412,22 @@ class CustomLightningCLI(LightningCLI):
         save_itr = self.model.save_itr
         
         if self.config_init.subcommand == 'predict':
-             # Get the checkpoint path from the configuration
             ckpt_path_to_load = self.config_init.predict.ckpt_path
-            # Add this line to print the path to your console
             print(f"\n✅ LOADING CHECKPOINT FROM: {ckpt_path_to_load}\n")
-            self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
-            
-            # Override save_itr with the value from config, which is set in the first intsantiacia_classes()
-            if self.config.subcommand == 'predict':
-                self.model.save_itr = save_itr
-                self.model.pretrain = False
-            
+            # ✂️ DON’T call load_from_checkpoint here!
+            # self.model = PromptMrModule.load_from_checkpoint(self.config_init.predict.ckpt_path)
 
 
 def run_cli():
-
     preprocess_save_dir()
 
     cli = CustomLightningCLI(
-        save_config_callback=CustomSaveConfigCallback,
+        save_config_callback=None,
         save_config_kwargs={"overwrite": True},
+        run=True  # Let Lightning handle predict()
     )
 
+    
 if __name__ == "__main__":
     run_cli()
+

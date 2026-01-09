@@ -1,3 +1,26 @@
+# CMRxRecon 2025
+
+This repository contains the modification of the PromptMR+ model used by the team BIRICON for the CMRxRecon 2025 challenge.
+
+Our main contributions remain in the following data augmentation techniques:
+
+* **Random Intensity Augmentation**: Simulates diverse scanner contrasts via non-linear gamma modification ($I_{aug} = I_{orig}^{\gamma}$, adding additional robustness to signal variations due to unseen distributions like unseen diseases and unseen scanners. [[code](scripts/gamma_redistribution.py)]
+* **FOV Adjustment Strategy**: Specifically for Special Task 2, we developed an image-space FOV adjustment strategy that training to explicitly predict acquisitions with smaller FOVs, making the model more robust to those of adults that make up the provided training data. [[code](scripts/small_fov.py)]
+
+<p align="center">
+  <img src="assets/BIRICON_innovation.png" alt="BIRICON Innovations" width="600" />
+</p>
+
+
+Team Members:
+
+* [Chaowei Wu](https://www.linkedin.com/in/chaowei-wu-50a849177/)
+* [Chushu Shen](https://www.linkedin.com/in/chushu-shen-30a67b1b9/)
+* [Yi Zheng](https://github.com/yi-zheng1101)
+* [Junzhou Chen](https://www.linkedin.com/in/junzhou-chen/)
+* [Yifan Gao](https://www.linkedin.com/in/yifan-gao-38496531b)
+
+
 # PromptMR+
 
 [[Paper](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/09565.pdf)] [[Supplementary](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/09565-supp.pdf)] [[Slides](https://eccv.ecva.net/media/eccv-2024/Slides/1057_OoLoVIz.pdf)] [[Video](https://youtu.be/8h0LNcypqYk?si=jgxaDXqoKGm35P9g)]

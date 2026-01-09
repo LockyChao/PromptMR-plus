@@ -3,9 +3,10 @@ from data import transforms
 from pl_modules import MriModule
 from typing import List
 import copy 
-from mri_utils import SSIMLoss
+from mri_utils import SSIMLoss, normalized_l1_loss
 import torch.nn.functional as F
 import importlib
+from typing import Optional
 
 def get_model_class(module_name, class_name="PromptMR"):
     """
@@ -52,10 +53,10 @@ class PromptMrModule(MriModule):
         lr_gamma: float = 0.1,
         weight_decay: float = 0.01,
         use_checkpoint: bool = False,
-        save_itr: bool = False,
         compute_sens_per_coil: bool = False,
         pretrain: bool = False,
         pretrain_weights_path: str = None,
+        kspace_loss_weight: float = 0.01,
         **kwargs,
     ):
         """
@@ -92,9 +93,14 @@ class PromptMrModule(MriModule):
             compute_sens_per_coil: (bool) whether to compute sensitivity maps per coil for memory saving
             pretrain: whether to load pretrain weights
             pretrain_weights_path: path to pretrain weights
+            kspace_loss_weight: weight for k-space loss in combined loss function
         """
         super().__init__(**kwargs)
-        self.save_hyperparameters()
+        # just to have it for logging / debugging
+        try:
+            self.save_hyperparameters()
+        except KeyError as e:
+            print(f"⚠️  save_hparams failed: {e}")
 
         self.num_cascades = num_cascades
         self.num_adj_slices = num_adj_slices
@@ -123,11 +129,11 @@ class PromptMrModule(MriModule):
         self.use_sens_adj = use_sens_adj
         # two flags for reducing memory usage
         self.use_checkpoint = use_checkpoint
-        self.save_itr = save_itr
         self.compute_sens_per_coil = compute_sens_per_coil
         
         self.pretrain = pretrain
         self.pretrain_weights_path = pretrain_weights_path
+        self.kspace_loss_weight = kspace_loss_weight
         
         self.lr = lr
         self.lr_step_size = lr_step_size
@@ -162,7 +168,13 @@ class PromptMrModule(MriModule):
         
         self._load_pretrain_weights()
         self.loss = SSIMLoss()
-        
+        self.normalized_l1 = normalized_l1_loss()
+    
+    def load_state_dict(self, state_dict, strict=True):
+        # always do a non-strict load, so any extra keys are simply skipped
+        # let PyTorch ignore any keys that don't match (e.g. domain_adapt.*)
+        return super().load_state_dict(state_dict, strict=False)
+   
     def _load_pretrain_weights(self):
         # load pretrain weights
         if not self.pretrain:
@@ -191,20 +203,132 @@ class PromptMrModule(MriModule):
         )
         return [optim], [scheduler]
     
+    def _override_lr_and_log(self):
+        """Override optimizer LR with self.lr and log scheduler state; tolerate env differences."""
+        # Ensure trainer/optimizer exist
+        if not hasattr(self, "trainer") or self.trainer is None:
+            return False
+        if not hasattr(self.trainer, "optimizers") or not self.trainer.optimizers:
+            return False
+
+        optimizer = self.trainer.optimizers[0]
+
+        # 1) Override optimizer param group learning rates
+        if hasattr(optimizer, "param_groups"):
+            for param_group in optimizer.param_groups:
+                param_group["lr"] = self.lr
+
+        # 2) Sync scheduler base_lrs so future steps use the new LR as base
+        schedulers = []
+        if hasattr(self.trainer, "lr_scheduler_configs") and self.trainer.lr_scheduler_configs:
+            for cfg in self.trainer.lr_scheduler_configs:
+                scheduler = getattr(cfg, "scheduler", None)
+                if scheduler is not None:
+                    schedulers.append(scheduler)
+        elif hasattr(self.trainer, "lr_schedulers") and self.trainer.lr_schedulers:
+            for s in self.trainer.lr_schedulers:
+                scheduler = s.get("scheduler") if isinstance(s, dict) else getattr(s, "scheduler", None)
+                if scheduler is not None:
+                    schedulers.append(scheduler)
+
+        # Prepare debug info
+        group_lrs = [pg.get("lr", None) for pg in getattr(optimizer, "param_groups", [])]
+        sched_infos = []
+
+        for scheduler in schedulers:
+            # 覆盖调度策略参数（若支持）：step_size 与 gamma
+            try:
+                if hasattr(scheduler, "step_size") and hasattr(self, "lr_step_size"):
+                    scheduler.step_size = self.lr_step_size
+                if hasattr(scheduler, "gamma") and hasattr(self, "lr_gamma"):
+                    scheduler.gamma = self.lr_gamma
+            except Exception:
+                pass
+
+            if hasattr(scheduler, "base_lrs") and getattr(optimizer, "param_groups", None):
+                scheduler.base_lrs = [self.lr for _ in optimizer.param_groups]
+            # Collect scheduler state for logging
+            info = {
+                "type": type(scheduler).__name__,
+                "last_epoch": getattr(scheduler, "last_epoch", None),
+                "step_size": getattr(scheduler, "step_size", None),
+                "gamma": getattr(scheduler, "gamma", None),
+                "get_last_lr": None,
+            }
+            try:
+                if hasattr(scheduler, "get_last_lr"):
+                    info["get_last_lr"] = scheduler.get_last_lr()
+            except Exception:
+                pass
+            sched_infos.append(info)
+
+        try:
+            self.print(
+                f"[PromptMrModule] Start training with LR={self.lr}. Param group LRs={group_lrs}. "
+                f"Schedulers={sched_infos} (states preserved from ckpt)."
+            )
+        except Exception:
+            pass
+
+        return True
+
+    def on_fit_start(self):
+        """
+        After resuming from a checkpoint, Lightning restores optimizer and LR scheduler states.
+        Here we override ONLY the learning rate to `self.lr` while preserving other states.
+        """
+        try:
+            self._override_lr_and_log()
+        except Exception as e:
+            try:
+                self.print(f"[PromptMrModule][WARN] on_fit_start override failed: {e}")
+            except Exception:
+                pass
+
+    def on_train_start(self):
+        """Fallback point: ensure LR override/logging happens after optimizers are fully set up."""
+        try:
+            self._override_lr_and_log()
+        except Exception as e:
+            try:
+                self.print(f"[PromptMrModule][WARN] on_train_start override failed: {e}")
+            except Exception:
+                pass
+    
     def forward(self, masked_kspace, mask, num_low_frequencies, mask_type="cartesian", use_checkpoint=False, compute_sens_per_coil=False):
-        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil, save_itr=self.save_itr)   
+        return self.promptmr(masked_kspace, mask, num_low_frequencies, mask_type, use_checkpoint=use_checkpoint, compute_sens_per_coil=compute_sens_per_coil)   
 
     def training_step(self, batch, batch_idx):
+        mask = batch.mask
+        kspace_data = batch.masked_kspace
+        if mask.shape[1] == 1:
+            mask = mask.repeat(1, kspace_data.shape[1], 1, 1, 1)
+        if mask.shape[2] == 1:
+            mask = mask.repeat(1, 1, kspace_data.shape[2], 1, 1)
+        
         output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
                            use_checkpoint=self.use_checkpoint, compute_sens_per_coil=self.compute_sens_per_coil)
+        center_slice = self.num_adj_slices // 2
+        current_mask = torch.chunk(mask, self.num_adj_slices, dim=1)[center_slice]
         output = output_dict['img_pred']
-        target, output = transforms.center_crop_to_smallest(
-            batch.target, output)
-
-        loss = self.loss(
+        pred_kspace = output_dict['pred_kspace']
+        GT_kspace = output_dict['original_kspace']
+        
+        target, output = transforms.center_crop_to_smallest(batch.target, output)
+        GT_kspace, pred_kspace = transforms.center_crop_to_smallest(GT_kspace, pred_kspace)
+        
+        pred_kspace1 = pred_kspace * current_mask
+        GT_kspace1 = GT_kspace * current_mask
+        
+        L_sup = self.loss(
             output.unsqueeze(1), target.unsqueeze(1), data_range=batch.max_value
         )
+        L_self = self.normalized_l1(pred_kspace1, GT_kspace1)
+        loss = L_sup + self.kspace_loss_weight * L_self
+        
         self.log("train_loss", loss, prog_bar=True)
+        self.log("sup_loss", L_sup, prog_bar=True)
+        self.log("self_loss", L_self, prog_bar=True)
 
         ##! raise error if loss is nan
         if torch.isnan(loss):
@@ -213,18 +337,37 @@ class PromptMrModule(MriModule):
 
 
     def validation_step(self, batch, batch_idx):
+        mask = batch.mask
+        kspace_data = batch.masked_kspace
+        if mask.shape[1] == 1:
+            mask = mask.repeat(1, kspace_data.shape[1], 1, 1, 1)
+        if mask.shape[2] == 1:
+            mask = mask.repeat(1, 1, kspace_data.shape[2], 1, 1)
 
         output_dict = self(batch.masked_kspace, batch.mask, batch.num_low_frequencies, batch.mask_type,
                            compute_sens_per_coil=self.compute_sens_per_coil)
+        center_slice = self.num_adj_slices // 2
+        current_mask = torch.chunk(mask, self.num_adj_slices, dim=1)[center_slice]
         output = output_dict['img_pred']
         img_zf = output_dict['img_zf']
-        target, output = transforms.center_crop_to_smallest(
-            batch.target, output)
-        _, img_zf = transforms.center_crop_to_smallest(
-            batch.target, img_zf)
-        val_loss = self.loss(
+        pred_kspace = output_dict['pred_kspace']
+        GT_kspace = output_dict['original_kspace']
+        
+        target, output = transforms.center_crop_to_smallest(batch.target, output)
+        _, img_zf = transforms.center_crop_to_smallest(batch.target, img_zf)
+        GT_kspace, pred_kspace = transforms.center_crop_to_smallest(GT_kspace, pred_kspace)
+        
+        pred_kspace1 = pred_kspace * current_mask
+        GT_kspace1 = GT_kspace * current_mask
+        
+        val_loss_sup = self.loss(
                 output.unsqueeze(1), target.unsqueeze(1), data_range=batch.max_value
             )
+        val_loss_kspace = self.normalized_l1(pred_kspace1, GT_kspace1)
+        
+        self.log("val_loss_sup", val_loss_sup, prog_bar=True)
+        self.log("val_loss_kspace", val_loss_kspace, prog_bar=True)
+        
         cc = batch.masked_kspace.shape[1]
         centered_coil_visual = torch.log(1e-10+torch.view_as_complex(batch.masked_kspace[:,cc//2]).abs())
         return {
@@ -237,19 +380,13 @@ class PromptMrModule(MriModule):
             "sens_maps": output_dict['sens_maps'][:,0].abs(),
             "output": output,
             "target": target,
-            "loss": val_loss,
+            "loss": val_loss_sup,  # 主要验证损失仍然是SSIM
         }
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         output_dict = self(batch.masked_kspace.float(), batch.mask, batch.num_low_frequencies, batch.mask_type,
                            compute_sens_per_coil=self.compute_sens_per_coil)
         output = output_dict['img_pred']
-        
-        if self.save_itr:
-            im_pred_cascades_list = output_dict['im_pred_cascades']
-            im_pred_cascades = torch.stack(im_pred_cascades_list, dim=1)
-            
-            
 
         crop_size = batch.crop_size 
         crop_size = [crop_size[0][0], crop_size[1][0]] # if batch_size>1
@@ -259,25 +396,13 @@ class PromptMrModule(MriModule):
         output = transforms.center_crop(output, crop_size)
 
         num_slc = batch.num_slc
-        
-        if self.save_itr:
-            return {
-                'output': output.cpu(), 
-                'slice_num': batch.slice_num, 
-                'fname': batch.fname,
-                'num_slc':  num_slc,
-                'batch_idx': batch_idx,
-                'time_frame': batch.num_t,
-                'im_pred_cascades': im_pred_cascades.cpu()
-            }
-        else:
-            return {
-                'output': output.cpu(), 
-                'slice_num': batch.slice_num, 
-                'fname': batch.fname,
-                'num_slc':  num_slc,
-                'batch_idx': batch_idx,
-                'time_frame': batch.num_t
-            }
-        
+        return {
+            'output': output.cpu(), 
+            'slice_num': batch.slice_num, 
+            'fname': batch.fname,
+            'num_slc':  num_slc,
+            'batch_idx': batch_idx,
+            'time_frame': batch.num_t,
+            'has_fake_time_dim': batch.has_fake_time_dim
+        }
         
