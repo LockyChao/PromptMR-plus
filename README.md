@@ -1,8 +1,8 @@
-# CMRxRecon 2025
+# BIRICON@CMRxRecon 2025
 
-This repository contains the modification of the PromptMR+ model used by the team BIRICON for the CMRxRecon 2025 challenge.
+This repository contains the modification of the [PromptMR+](https://github.com/hellopipu/PromptMR-plus) model used by the team BIRICON for the CMRxRecon 2025 challenge.
 
-Our main contributions remain in the following data augmentation techniques:
+Our main contributions are described in the following data augmentation techniques:
 
 * **Random Intensity Augmentation**: Simulates diverse scanner contrasts via non-linear gamma modification ($I_{aug} = I_{orig}^{\gamma}$, adding additional robustness to signal variations due to unseen distributions like unseen diseases and unseen scanners. [[code](scripts/gamma_redistribution.py)]
 * **FOV Adjustment Strategy**: Specifically for Special Task 2, we developed an image-space FOV adjustment strategy that training to explicitly predict acquisitions with smaller FOVs, making the model more robust to those of adults that make up the provided training data. [[code](scripts/small_fov.py)]
