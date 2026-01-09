@@ -25,7 +25,7 @@ data:
         use_seed: true
         
         # test_num_low_frequencies: -1   # If mask_func is none, use this parameter
-    num_adj_slices: 5
+    num_adj_slices: 7
     batch_size: 1
 #   num_workers: 4
     distributed_sampler: true
@@ -55,7 +55,7 @@ model:
   init_args:
     # Model architecture 
     num_cascades: 16               # Number of cascade blocks
-    num_adj_slices: 5              # Number of adjacent slices
+    num_adj_slices: 7              # Number of adjacent slices
     n_feat0: 48                    # Base feature channels
     
     # Feature dimensions
